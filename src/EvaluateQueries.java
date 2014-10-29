@@ -128,7 +128,7 @@ public class EvaluateQueries {
 		// Build Index
 		IndexFiles.buildIndex(indexDir, docsDir, stopwords);
 
-		/*
+		
 		// load queries and answer
 		Map<Integer, String> queries = loadQueries(queryFile);
 		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
@@ -148,7 +148,7 @@ public class EvaluateQueries {
 		}
 
 		return sum / queries.size();
-		*/
-		return 0;
+		
+		// return 0;
 	}
 }

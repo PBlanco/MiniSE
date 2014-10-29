@@ -124,14 +124,14 @@ public class EvaluateQueries {
 		// Search and evaluate
 		double sum = 0;
 		for (Integer i : queries.keySet()) {
-			if (i == 1) {
+//			if (i == 1) {
 				List<String> results = SearchFiles.searchQuery(indexDir, queries
 						.get(i), numResults, stopwords);
 				sum += precision(queryAnswers.get(i), results);
 				System.out.printf("\nTopic %d  ", i);
 				System.out.print (results);
 				System.out.println();
-			}
+//			}
 			
 		}
 

@@ -2,11 +2,19 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.util.Date;
+import java.util.Scanner;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.core.StopFilter;
+import org.apache.lucene.analysis.en.PorterStemFilter;
+import org.apache.lucene.analysis.standard.StandardTokenizer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -18,6 +26,7 @@ import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 // import org.apache.lucene.util.Version;
+import org.apache.lucene.util.Version;
 
 /** Index all text files under a directory, the directory is at data/txt/
  */
@@ -25,7 +34,58 @@ import org.apache.lucene.store.FSDirectory;
 public class IndexFiles {
 
 	private IndexFiles() {}
+	
+	public static CharArraySet makeStopwordSet(String filename){
+		BufferedReader reader = null;
+		CharArraySet stopwordSet = new CharArraySet(Version.LUCENE_44,0,false);
+		try {
+			File file = new File(filename);
+			reader = new BufferedReader(new FileReader(file));
+			String word;
+			while ((word = reader.readLine()) != null){
+				stopwordSet.add(word);
+			}
+		} catch (IOException e){
+			e.printStackTrace();
+		} finally{
+			try {
+				reader.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return stopwordSet;
+	}
+	
+	public static String removeStopWordsAndStem(String docpath, CharArraySet stopwords) throws IOException {
+		
+		//convert doc to string
+		String docString = "";
+		try{
+			docString = new Scanner( new File(docpath)).useDelimiter("\\A").next();
+			System.out.println(docString);
+		}  catch (IOException e){
+			e.printStackTrace();
+			return "";
+		}
 
+	    @SuppressWarnings("deprecation")
+		TokenStream tokenStream = new StandardTokenizer(Version.LUCENE_44, new StringReader(docString));
+	    tokenStream = new StopFilter(tokenStream, stopwords);
+	    tokenStream = new PorterStemFilter(tokenStream);
+
+	    
+	    StringBuilder sb = new StringBuilder();
+	    CharTermAttribute charTermAttribute = tokenStream.addAttribute(CharTermAttribute.class);
+	    tokenStream.reset();
+	    while (tokenStream.incrementToken()) {
+	        String term = charTermAttribute.toString();
+	        sb.append(term + " ");
+	    }
+	    System.out.println(sb.toString());
+	    return sb.toString();
+	}
+	
 	/** Index all text files under a directory. */
 	public static void buildIndex(String indexPath, String docsPath, CharArraySet stopwords) {
 		// Check whether docsPath is valid
@@ -40,8 +100,19 @@ public class IndexFiles {
 			System.out.println("Document directory '" +docDir.getAbsolutePath()+ "' does not exist or is not readable, please check the path");
 			System.exit(1);
 		}
+		String docString;
+		try {
+			docString = IndexFiles.removeStopWordsAndStem(docsPath, stopwords);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	    
+	    
 
 		Date start = new Date();
+		
+		
 		IndexWriter writer = null;
 		try {
 			System.out.println("Indexing to directory '" + indexPath + "'...");
@@ -50,6 +121,9 @@ public class IndexFiles {
 //			Analyzer analyzer = new MyAnalyzer(Version.LUCENE_44, stopwords);
 //
 //			IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_44, analyzer);
+			
+			/* An Analyzer builds TokenStreams, which analyze text. 
+			 * It thus represents a policy for extracting index terms from text. */
 			Analyzer analyzer = new MyAnalyzer(stopwords);
 
 			IndexWriterConfig iwc = new IndexWriterConfig(null, analyzer);

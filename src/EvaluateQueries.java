@@ -9,13 +9,18 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.lucene.analysis.core.StopAnalyzer;
+import org.apache.lucene.analysis.core.StopFilter;
 // import lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.util.Version;
 
 public class EvaluateQueries {
+	
+	
+	
 	public static void main(String[] args) {
-		String cacmDocsDir = "data/cacm"; // directory containing CACM documents
+		/*edited this so it's only one doc */
+		String cacmDocsDir = "data/cacm/CACM-0001.txt"; // directory containing CACM documents
 		String medDocsDir = "data/med"; // directory containing MED documents
 		
 		String cacmIndexDir = "data/index/cacm"; // the directory where index is written into
@@ -27,19 +32,24 @@ public class EvaluateQueries {
 		String medQueryFile = "data/med_processed.query";    // MED query file
 		String medAnswerFile = "data/med_processed.rel";   // MED relevance judgements file
 		
-		int cacmNumResults = 100;
-		int medNumResults = 100;
+		int cacmNumResults = 10;
+		int medNumResults = 10;
 
-	    // CharArraySet stopwords = new CharArraySet(Version.LUCENE_44,0,false);
-	    CharArraySet stopwords = new CharArraySet(0, false);
+		
+		//tokenizer 
+		String stopwordFile = "stopwords/stopwords_indri.txt"; //Stop word file
+		CharArraySet stopwords = IndexFiles.makeStopwordSet(stopwordFile);
+		
+		
 		System.out.println(evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile,
 				cacmAnswerFile, cacmNumResults, stopwords));
-		
+
+		/*
 		System.out.println("\n");
 		
 		System.out.println(evaluate(medIndexDir, medDocsDir, medQueryFile,
 				medAnswerFile, medNumResults, stopwords));
-
+		*/
 	}
 
 	private static Map<Integer, String> loadQueries(String filename) {
@@ -109,7 +119,8 @@ public class EvaluateQueries {
 
 		return matches / results.size();
 	}
-
+	
+	
 	private static double evaluate(String indexDir, String docsDir,
 			String queryFile, String answerFile, int numResults,
 			CharArraySet stopwords) {
@@ -117,6 +128,7 @@ public class EvaluateQueries {
 		// Build Index
 		IndexFiles.buildIndex(indexDir, docsDir, stopwords);
 
+		/*
 		// load queries and answer
 		Map<Integer, String> queries = loadQueries(queryFile);
 		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
@@ -124,17 +136,19 @@ public class EvaluateQueries {
 		// Search and evaluate
 		double sum = 0;
 		for (Integer i : queries.keySet()) {
-			if (i == 1) {
+//			if (i == 1) { Commented out to calculate MAP
 				List<String> results = SearchFiles.searchQuery(indexDir, queries
 						.get(i), numResults, stopwords);
 				sum += precision(queryAnswers.get(i), results);
 				System.out.printf("\nTopic %d  ", i);
 				System.out.print (results);
 				System.out.println();
-			}
+//			}
 			
 		}
 
 		return sum / queries.size();
+		*/
+		return 0;
 	}
 }

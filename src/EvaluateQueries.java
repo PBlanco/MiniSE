@@ -20,7 +20,7 @@ public class EvaluateQueries {
 	
 	public static void main(String[] args) {
 		/*edited this so it's only one doc */
-		String cacmDocsDir = "data/cacm/CACM-0001.txt"; // directory containing CACM documents
+		String cacmDocsDir = "data/cacm/"; // directory containing CACM documents
 		String medDocsDir = "data/med"; // directory containing MED documents
 		
 		String cacmIndexDir = "data/index/cacm"; // the directory where index is written into

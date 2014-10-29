@@ -65,7 +65,7 @@ public class IndexFiles {
 		String docString = "";
 		try{
 			docString = new Scanner( new File(docpath)).useDelimiter("\\A").next();
-			System.out.println(docString);
+			//System.out.println(docString);
 		}  catch (IOException e){
 			e.printStackTrace();
 			return null;
@@ -78,7 +78,7 @@ public class IndexFiles {
 	    tokenStream = new PorterStemFilter(tokenStream);
 
 	    
-	    StringBuilder sb = new StringBuilder(); //FOR TESTING
+	    //StringBuilder sb = new StringBuilder(); //FOR TESTING
 	    
 	    //arralist to keep tokenized words
 	    ArrayList<String> tokensArray = new ArrayList<String>();
@@ -90,11 +90,11 @@ public class IndexFiles {
 	    while (tokenStream.incrementToken()) {
 	        String term = charTermAttribute.toString();
 	        tokensArray.add(term);
-	        sb.append(term + " ");//FOR TESTING
+	        //sb.append(term + " ");//FOR TESTING
 	    }
 	    tokenStream.end();
 	    tokenStream.close();
-	    System.out.println(sb.toString());//FOR TESTING
+	    //System.out.println(sb.toString());//FOR TESTING
 	    return tokensArray;
 	}
 	
@@ -109,7 +109,7 @@ public class IndexFiles {
 	}
 	
 	/** Index all text files under a directory. */
-	public static void buildIndex(String indexPath, String docsPath, CharArraySet stopwords) {
+	public static void buildIndex(String indexPath, String docsPath, CharArraySet stopwords, MangoDB database) {
 		// Check whether docsPath is valid
 		if (docsPath == null || docsPath.isEmpty()) {
 			System.err.println("Document directory cannot be null");
@@ -123,9 +123,7 @@ public class IndexFiles {
 			System.exit(1);
 		}
 		
-		//============ My code ===================
-		MangoDB database = new MangoDB();
-	    
+		//============ My code ===================	    
 		Date start = new Date();
 		
 		System.out.println("Indexing to directory '" + indexPath + "'...");

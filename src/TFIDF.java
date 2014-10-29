@@ -5,8 +5,11 @@ import java.util.Set;
 
 
 public class TFIDF {
+	public static String[] pieces(String original) {
+		return original.split("\\s+");
+	}
 	public static int termFrequency(String term, String source) {
-		String[] pieces = source.split("\\s+");
+		String[] pieces = pieces(source);
 		int freq = 0;
 		for (String piece : pieces)
 			if (piece.equals(source))
@@ -19,7 +22,7 @@ public class TFIDF {
 		return doc.get(term);
 	}
 	public static int maxTF(String str) {
-		String[] pieces = str.split("\\s+");
+		String[] pieces = pieces(str);
 		Set<String> uniquePieces = new HashSet<String>(Arrays.asList(pieces));
 		int freq = 0;
 		for (String piece : uniquePieces) {
@@ -51,5 +54,20 @@ public class TFIDF {
 		double tf = (double)termFrequency(term, doc);
 		double maxTF = (double)maxTF(doc);
 		return 0.5 + 0.5 * (tf / maxTF);
+	}
+	
+	public static int binaryTF(String term, String doc) {
+		String[] pieces = pieces(doc);
+		for (String piece : pieces)
+			if (piece.equals(term))
+				return 1;
+		return 0;
+	}
+	public static int binaryTF(String term, HashMap<String, Integer> doc) {
+		Integer freq = doc.get(term);
+		if (freq == null)
+			return 0;
+		else
+			return 1;
 	}
 }

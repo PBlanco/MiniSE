@@ -34,7 +34,7 @@ import org.apache.lucene.util.Version;
  */
 
 public class IndexFiles {
-
+	
 	private IndexFiles() {}
 	
 	public static CharArraySet makeStopwordSet(String filename){
@@ -65,7 +65,7 @@ public class IndexFiles {
 		String docString = "";
 		try{
 			docString = new Scanner( new File(docpath)).useDelimiter("\\A").next();
-			System.out.println(docString);
+			//System.out.println(docString);
 		}  catch (IOException e){
 			e.printStackTrace();
 			return null;
@@ -78,7 +78,7 @@ public class IndexFiles {
 	    tokenStream = new PorterStemFilter(tokenStream);
 
 	    
-	    StringBuilder sb = new StringBuilder(); //FOR TESTING
+	    //StringBuilder sb = new StringBuilder(); //FOR TESTING
 	    
 	    //arralist to keep tokenized words
 	    ArrayList<String> tokensArray = new ArrayList<String>();
@@ -90,11 +90,11 @@ public class IndexFiles {
 	    while (tokenStream.incrementToken()) {
 	        String term = charTermAttribute.toString();
 	        tokensArray.add(term);
-	        sb.append(term + " ");//FOR TESTING
+	        //sb.append(term + " ");//FOR TESTING
 	    }
 	    tokenStream.end();
 	    tokenStream.close();
-	    System.out.println(sb.toString());//FOR TESTING
+	    //System.out.println(sb.toString());//FOR TESTING
 	    return tokensArray;
 	}
 	
@@ -109,7 +109,7 @@ public class IndexFiles {
 	}
 	
 	/** Index all text files under a directory. */
-	public static void buildIndex(String indexPath, String docsPath, CharArraySet stopwords) {
+	public static void buildIndex(String indexPath, String docsPath, CharArraySet stopwords, MangoDB database) {
 		// Check whether docsPath is valid
 		if (docsPath == null || docsPath.isEmpty()) {
 			System.err.println("Document directory cannot be null");
@@ -123,112 +123,51 @@ public class IndexFiles {
 			System.exit(1);
 		}
 		
-		//========= My code===================
-		ArrayList<String> docTokenArrayList;
-		try {
-			docTokenArrayList = IndexFiles.removeStopWordsAndStem(docsPath, stopwords);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			System.out.println("Failed while stopping and stemming");
-			e1.printStackTrace();
-			return;
-		}
-	    
-		MangoDB singletestDB = new MangoDB();
-		
-		HashMap<String, Integer> freqs = IndexFiles.createDocumentTokenMapping(docTokenArrayList);
-		singletestDB.setTokenFrequenciesForDocument(docsPath, freqs);
-	    
-
+		//============ My code ===================	    
 		Date start = new Date();
 		
+		System.out.println("Indexing to directory '" + indexPath + "'...");
 		
-		IndexWriter writer = null;
-		try {
-			System.out.println("Indexing to directory '" + indexPath + "'...");
-
-			Directory dir = FSDirectory.open(new File(indexPath));
-//			Analyzer analyzer = new MyAnalyzer(Version.LUCENE_44, stopwords);
-//
-//			IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_44, analyzer);
-			
-			/* An Analyzer builds TokenStreams, which analyze text. 
-			 * It thus represents a policy for extracting index terms from text. */
-			Analyzer analyzer = new MyAnalyzer(stopwords);
-
-			IndexWriterConfig iwc = new IndexWriterConfig(null, analyzer);
-			// Create a new index in the directory, removing any
-			// previously indexed documents:
-			iwc.setOpenMode(OpenMode.CREATE);
-
-			writer = new IndexWriter(dir, iwc);
-			// Write the index into them.
-			indexDocs(writer, docDir);
-
-			Date end = new Date();
-			System.out.println(end.getTime() - start.getTime() + " total milliseconds");
-
-		} catch (IOException e) {
-			System.out.println(" caught a " + e.getClass() + "\n with message: " + e.getMessage());
-		} finally {
-			try {
-				writer.close();
-			} catch(IOException e) {
-				System.out.println(" caught a " + e.getClass() + "\n with message: " + e.getMessage());
-			}
-		}
+		indexDocs(indexPath, docsPath, stopwords, docDir , database);
+		
+		Date end = new Date();
+		System.out.println(end.getTime() - start.getTime() + " total milliseconds"); 
 	}
 
 	/**
 	 * Indexes the given file using the given writer, or if a directory is given,
 	 * recurses over files and directories found under the given directory.
 	 */
-	static void indexDocs(IndexWriter writer, File file) {
+	static void indexDocs(String indexPath, String docsPath, CharArraySet stopwords, File file, MangoDB database) {
 		if (file.canRead()) {
 			if (file.isDirectory()) {
 				String[] files = file.list();
 				if (files != null) {
 					for (int i = 0; i < files.length; i++) {
-						indexDocs(writer, new File(file, files[i]));
+						indexDocs(indexPath, docsPath, stopwords, new File(file, files[i]), database);
 					}
 				}
 			} else {
-				FileInputStream fis = null;
-				
+		
 				try {
-					fis = new FileInputStream(file);
-				} catch (FileNotFoundException e) {
-					System.out.println(" caught a " + e.getClass() + "\n with message: " + e.getMessage());
-				}
+					//remove stopwords, stemm, and tokenize
+					ArrayList<String> docTokenArrayList;
+					
+					String path = file.getName();
+					if (docsPath != file.getName()){
+						path = docsPath + file.getName();
+					}
 
-				try {
-					// make a new, empty document
-					Document doc = new Document();
+					docTokenArrayList =removeStopWordsAndStem(path, stopwords);
 
-					// Add the path of the file as a field named "path".  Use a
-					// field that is indexed (i.e. searchable), but don't tokenize 
-					// the field into separate words and don't index term frequency
-					// or positional information:
-					Field pathField = new StringField("path", file.getName(), Field.Store.YES);
-					doc.add(pathField);
-
-
-					// Add the contents of the file to a field named "contents".  Specify a Reader,
-					// so that the text of the file is tokenized and indexed, but not stored.
-					doc.add(new TextField("contents", new BufferedReader(new InputStreamReader(fis))));
-
-					// New index, so we just add the document (no old document can be there):
-					// System.out.println("adding " + file);
-					writer.addDocument(doc);
-
+					//Get doc name
+					//create term->frequency hashmap
+					HashMap<String, Integer> freqs = createDocumentTokenMapping(docTokenArrayList);
+					//add to databse
+					database.setTokenFrequenciesForDocument(file.getName(), freqs);
 				} catch (IOException e) {
 					System.out.println(" caught a " + e.getClass() + "\n with message: " + e.getMessage());
-				} finally {
-					try {
-						fis.close();
-					} catch(IOException e) {
-						System.out.println(" caught a " + e.getClass() + "\n with message: " + e.getMessage());
-					}
+					e.printStackTrace();
 				}
 			}
 		}

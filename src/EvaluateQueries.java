@@ -20,7 +20,7 @@ public class EvaluateQueries {
 	
 	public static void main(String[] args) {
 		/*edited this so it's only one doc */
-		String cacmDocsDir = "data/cacm/CACM-0001.txt"; // directory containing CACM documents
+		String cacmDocsDir = "data/cacm/"; // directory containing CACM documents
 		String medDocsDir = "data/med"; // directory containing MED documents
 		
 		String cacmIndexDir = "data/index/cacm"; // the directory where index is written into
@@ -126,19 +126,20 @@ public class EvaluateQueries {
 			CharArraySet stopwords) {
 
 		// Build Index
-		IndexFiles.buildIndex(indexDir, docsDir, stopwords);
+		MangoDB database = new MangoDB();
+		IndexFiles.buildIndex(indexDir, docsDir, stopwords, database);
 
-		
+
 		// load queries and answer
 		Map<Integer, String> queries = loadQueries(queryFile);
 		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
-
+		
+		/*
 		// Search and evaluate
 		double sum = 0;
 		for (Integer i : queries.keySet()) {
 //			if (i == 1) { Commented out to calculate MAP
-				List<String> results = SearchFiles.searchQuery(indexDir, queries
-						.get(i), numResults, stopwords);
+				List<String> results = SearchFiles.searchQuery(indexDir, queries.get(i), numResults, stopwords);
 				sum += precision(queryAnswers.get(i), results);
 				System.out.printf("\nTopic %d  ", i);
 				System.out.print (results);
@@ -146,9 +147,13 @@ public class EvaluateQueries {
 //			}
 			
 		}
+		
 
 		return sum / queries.size();
 		
 		// return 0;
+		*/
+		
+		return 0;
 	}
 }

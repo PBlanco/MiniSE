@@ -25,7 +25,16 @@ public class SearchFiles {
 		String field = "contents";
 		List<String> hitPaths = new ArrayList<String>();
 
+			
+		/*
+		 * Parse Query w/ stemming and stopping and tokenizing
+		 * search document for by comparing words and term frequencies
+		 * add hits to a the string list hitpaths and cut of the .txt
+		 * return this file
+		 */
+		/*
 		try {
+
 			IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexDir)));
 			IndexSearcher searcher = new IndexSearcher(reader);
 //			Analyzer analyzer = new MyAnalyzer(Version.LUCENE_44, stopwords);
@@ -48,6 +57,7 @@ public class SearchFiles {
 		} catch (ParseException e) {
 			System.out.println(" caught a " + e.getClass() + "\n with message: " + e.getMessage());
 		}
+		*/
 
 		return hitPaths;
 	}

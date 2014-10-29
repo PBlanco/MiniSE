@@ -2,7 +2,7 @@ import java.util.HashMap;
 import java.util.Set;
 
 
-public class MangoDB implements DBInterface {
+public class MangoDB {
 	private HashMap<String, HashMap<String, Integer>> mango;
 	
 	public MangoDB() {

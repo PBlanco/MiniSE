@@ -55,4 +55,19 @@ public class MangoDB implements DBInterface {
 			return false;
 		return true;
 	}
+	
+	public int documentCount() {
+		return mango.keySet().size();
+	}
+	
+	public int numberOfDocumentsWithTerm(String term) {
+		Set<String> keys = mango.keySet();
+		int docCount = 0;
+		for (String key : keys) {
+			HashMap<String, Integer> doc = mango.get(key);
+			if (doc.get(term) != null)
+				docCount++;
+		}
+		return docCount;
+	}
 }

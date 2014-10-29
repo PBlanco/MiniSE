@@ -70,4 +70,42 @@ public class TFIDF {
 		else
 			return 1;
 	}
+	
+	public static double idf(String term, MangoDB database) {
+		double N = (double)database.documentCount();
+		double n = (double)database.numberOfDocumentsWithTerm(term);
+		return Math.log10((N / n));
+	}
+	
+	public static double atn(String term, HashMap<String, Integer> doc, MangoDB collection) {
+		double tf = augmentedTF(term, doc);
+		// https://piazza.com/class/hz0gtmi8y6v6eo?cid=193
+		double idf = idf(term, collection);
+		return tf * idf;
+	}
+	public static double atn(String term, String source, MangoDB collection) {
+		double tf = augmentedTF(term, source);
+		double idf = idf(term, collection);
+		return tf * idf;
+	}
+	public static double ann(String term, HashMap<String, Integer> doc) {
+		return augmentedTF(term, doc);
+	}
+	public static double ann(String term, String source) {
+		return augmentedTF(term, source);
+	}
+	public static double bpn(String term, HashMap<String, Integer> doc, MangoDB collection) {
+		double tf = augmentedTF(term, doc);
+		double N = (double)collection.documentCount();
+		double n = (double)collection.numberOfDocumentsWithTerm(term);
+		double pidf = Math.max(0, Math.log((N - n) / n));
+		return tf * pidf;
+	}
+	public static double bpn(String term, String source, MangoDB collection) {
+		double tf = augmentedTF(term, source);
+		double N = (double)collection.documentCount();
+		double n = (double)collection.numberOfDocumentsWithTerm(term);
+		double pidf = Math.max(0, Math.log((N - n) / n));
+		return tf * pidf;
+	}
 }

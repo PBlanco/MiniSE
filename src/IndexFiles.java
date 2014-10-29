@@ -6,7 +6,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Scanner;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -57,7 +59,7 @@ public class IndexFiles {
 		return stopwordSet;
 	}
 	
-	public static String removeStopWordsAndStem(String docpath, CharArraySet stopwords) throws IOException {
+	public static ArrayList<String> removeStopWordsAndStem(String docpath, CharArraySet stopwords) throws IOException {
 		
 		//convert doc to string
 		String docString = "";
@@ -66,24 +68,44 @@ public class IndexFiles {
 			System.out.println(docString);
 		}  catch (IOException e){
 			e.printStackTrace();
-			return "";
+			return null;
 		}
-
+		
+	    //initialize token stream with document
 	    @SuppressWarnings("deprecation")
 		TokenStream tokenStream = new StandardTokenizer(Version.LUCENE_44, new StringReader(docString));
 	    tokenStream = new StopFilter(tokenStream, stopwords);
 	    tokenStream = new PorterStemFilter(tokenStream);
 
 	    
-	    StringBuilder sb = new StringBuilder();
+	    StringBuilder sb = new StringBuilder(); //FOR TESTING
+	    
+	    //arralist to keep tokenized words
+	    ArrayList<String> tokensArray = new ArrayList<String>();
+	    
+	    //use this to access tokens within stream
 	    CharTermAttribute charTermAttribute = tokenStream.addAttribute(CharTermAttribute.class);
+	    //Brings stream back to starting token
 	    tokenStream.reset();
 	    while (tokenStream.incrementToken()) {
 	        String term = charTermAttribute.toString();
-	        sb.append(term + " ");
+	        tokensArray.add(term);
+	        sb.append(term + " ");//FOR TESTING
 	    }
-	    System.out.println(sb.toString());
-	    return sb.toString();
+	    tokenStream.end();
+	    tokenStream.close();
+	    System.out.println(sb.toString());//FOR TESTING
+	    return tokensArray;
+	}
+	
+	
+	public static HashMap<String, Integer> createDocumentTokenMapping(ArrayList<String> docTokensAL){
+		HashMap<String, Integer> tokenFrequencyMap = new HashMap<String, Integer>(); 
+		for(String token : docTokensAL){
+			int freq = tokenFrequencyMap.containsKey(token) ? tokenFrequencyMap.get(token) : 0;
+			tokenFrequencyMap.put(token, freq + 1);
+		}
+		return tokenFrequencyMap;
 	}
 	
 	/** Index all text files under a directory. */
@@ -100,14 +122,22 @@ public class IndexFiles {
 			System.out.println("Document directory '" +docDir.getAbsolutePath()+ "' does not exist or is not readable, please check the path");
 			System.exit(1);
 		}
-		String docString;
+		
+		//========= My code===================
+		ArrayList<String> docTokenArrayList;
 		try {
-			docString = IndexFiles.removeStopWordsAndStem(docsPath, stopwords);
+			docTokenArrayList = IndexFiles.removeStopWordsAndStem(docsPath, stopwords);
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
+			System.out.println("Failed while stopping and stemming");
 			e1.printStackTrace();
+			return;
 		}
 	    
+		MangoDB singletestDB = new MangoDB();
+		
+		HashMap<String, Integer> freqs = IndexFiles.createDocumentTokenMapping(docTokenArrayList);
+		singletestDB.setTokenFrequenciesForDocument(docsPath, freqs);
 	    
 
 		Date start = new Date();

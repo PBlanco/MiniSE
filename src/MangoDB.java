@@ -8,6 +8,7 @@ public class MangoDB implements DBInterface {
 	public MangoDB() {
 		mango = new HashMap<String, HashMap<String, Integer>>();
 	}
+	
 	public Integer frequencyForToken(String token) {
 		int freq = 0;
 		Set<String> documents = mango.keySet();
@@ -26,21 +27,25 @@ public class MangoDB implements DBInterface {
 		String[] keyArray = (String[])keySet.toArray();
 		return keyArray;
 	}
+	
 	public Integer frequencyForTokenInDocument(String docName, String token) {
 		HashMap<String, Integer> document = mango.get(docName);
 		if (document == null)
 			return null;
 		return document.get(token);
 	}
+	
 	public HashMap<String, Integer> tokenFrequenciesForDocument(String docName) {
 		return mango.get(docName);
 	}
+	
 	public boolean setTokenFrequenciesForDocument(String docName, HashMap<String, Integer> freqs) {
 		Object r = mango.put(docName, freqs);
 		if (r == null)
 			return false;
 		return true;
 	}
+	
 	public boolean setFrequencyForTokenInDocument(String docName, String token, Integer freq) {
 		HashMap<String, Integer> document = mango.get(docName);
 		if (document == null)

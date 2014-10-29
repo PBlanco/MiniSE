@@ -9,6 +9,6 @@ public interface DBInterface {
 	public String[] documents();
 	public Integer frequencyForTokenInDocument(String docName, String token);
 	public HashMap<String, Integer> tokenFrequenciesForDocument(String docName);
-	public void setTokenFrequenciesForDocument(String docName, HashMap<String, Integer> freqs);
-	public void setFrequencyForTokenInDocument(String docName, String token, Integer freq);
+	public boolean setTokenFrequenciesForDocument(String docName, HashMap<String, Integer> freqs);
+	public boolean setFrequencyForTokenInDocument(String docName, String token, Integer freq);
 }

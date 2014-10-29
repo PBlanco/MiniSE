@@ -1,3 +1,5 @@
+import java.util.HashMap;
+
 
 public class BM25Similarity {
 	/*Implement the BM25 similarity measure, 
@@ -16,7 +18,7 @@ public class BM25Similarity {
 		return k1*((1-b)+b*(dl/avdl));
 	}
 	
-	public double computeBM25Similarity(query, document){
+	public double computeBM25Similarity(HashMap<String,Integer> Query, String documentID, MangoDB database){
 		double ri=0; // is the # of relevant documents containing term i (set to 0 if no relevancy info is known)
 		double R=0; //is the number of relevant documents for this query – (set to 0 if no relevancy info is known)
 

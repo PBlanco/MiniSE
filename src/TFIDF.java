@@ -108,4 +108,17 @@ public class TFIDF {
 		double pidf = Math.max(0, Math.log((N - n) / n));
 		return tf * pidf;
 	}
+	
+	// https://piazza.com/class/hz0gtmi8y6v6eo?cid=253
+	public static double[] normalizeWeights(double[] weights) {
+		double denomInner = 0;
+		for (double num : weights)
+			denomInner += Math.pow(num, 2);
+		double denom = Math.sqrt(denomInner);
+		double normFactor = 1.0 / denom;
+		double[] mapped = new double[weights.length];
+		for (int i = 0; i < weights.length; i++)
+			mapped[i] = weights[i] * normFactor;
+		return mapped;
+	}
 }

@@ -18,24 +18,30 @@ public class BM25Similarity {
 		return k1*((1-b)+b*(dl/avdl));
 	}
 	
-	public double computeBM25Similarity(HashMap<String,Integer> Query, String documentID, MangoDB database){
-		double ri=0; // is the # of relevant documents containing term i (set to 0 if no relevancy info is known)
-		double R=0; //is the number of relevant documents for this query – (set to 0 if no relevancy info is known)
+	public double computeBM25Similarity(HashMap<String,Integer> queryMap, String docName, MangoDB db){
+		double ri=0; // is the # of relevant docs containing term i (set to 0 if no relevancy info is known)
+		double R=0; //is the number of relevant docs for this query – (set to 0 if no relevancy info is known)
 
-//		double K = calculateK(k1,b,dl,avdl); //is more complicated. Its role is basically to normalize the tf component by document length.
+		double dl = db.getDocLengthForDocument(docName); //get doc length
+		double avdl = db.getAvdl(); //get average doc length
+		double K = calculateK(dl,avdl); //is more complicated. Its role is basically to normalize the tf component by document length.
 
 		
-		double N; //is the total # of docs in the collection
-
+		double N = db.documents().length; //is the total # of docs in the collection
+		HashMap<String, Integer> document = db.tokenFrequenciesForDocument(docName);
 		
 		
-		double finalValue;
-		for(String term in query){
-			double ni; // is the # of docs containing term 
-			double fi; //is the frequency of term i in the doc under consideration
-			double qfi; // is the frequency of term i in the query
+		double finalValue = 0;
+		for(String term : queryMap.keySet()){
+			// get the # of docs containing term 
+			double ni = db.numberOfDocumentsContainingTerm(term); 
+			//get the frequency of term i in the doc under consideration
+			double fi = (document.get(term) != null)? document.get(term).doubleValue(): 0; 
+			// get the frequency of term i in the query
+			double qfi = (queryMap.get(term) != null)? queryMap.get(term).doubleValue(): 0; 
 
-			double numFrac1 = (r+0.5)/(R-ri+0.5);
+			
+			double numFrac1 = (ri+0.5)/(R-ri+0.5);
 			double denFrac1 = (ni-ri+0.5)/(N-ni-R+ri+0.5);
 			
 			double numFrac2 = ((k1+1)*fi)/(K+fi);
@@ -48,7 +54,6 @@ public class BM25Similarity {
 			finalValue += Math.log(val);
 		}
 		return finalValue;
-	
 	}
-	
+}
 

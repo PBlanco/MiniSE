@@ -99,9 +99,9 @@ public class IndexFiles {
 	}
 	
 	
-	public static HashMap<String, Integer> createDocumentTokenMapping(ArrayList<String> docTokensAL){
+	public static HashMap<String, Integer> createTokenMap(ArrayList<String> tokensAL){
 		HashMap<String, Integer> tokenFrequencyMap = new HashMap<String, Integer>(); 
-		for(String token : docTokensAL){
+		for(String token : tokensAL){
 			int freq = tokenFrequencyMap.containsKey(token) ? tokenFrequencyMap.get(token) : 0;
 			tokenFrequencyMap.put(token, freq + 1);
 		}
@@ -162,9 +162,9 @@ public class IndexFiles {
 
 					//Get doc name
 					//create term->frequency hashmap
-					HashMap<String, Integer> freqs = createDocumentTokenMapping(docTokenArrayList);
+					HashMap<String, Integer> freqs = createTokenMap(docTokenArrayList);
 					//add to databse
-					database.setTokenFrequenciesForDocument(file.getName(), freqs);
+					database.setTokenFrequenciesForDocument(file.getName(), freqs, docTokenArrayList.size());
 				} catch (IOException e) {
 					System.out.println(" caught a " + e.getClass() + "\n with message: " + e.getMessage());
 					e.printStackTrace();

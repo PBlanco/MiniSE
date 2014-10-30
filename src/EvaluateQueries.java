@@ -121,11 +121,14 @@ public class EvaluateQueries {
 	
 	private static double meanAverageprecision(HashSet<String> answers, ArrayList<ReturnDoc> results) {
 		double avp = 0;
-		int i = 1;
+		int matches = 0;
+		int docs = 0;
 		for (ReturnDoc result : results) {
-			if (answers.contains(result.getName()))
-				avp+= 1/i;
-			i++;
+			docs++;
+			if (answers.contains(result.getName())){
+				matches++;
+				avp+= matches/docs;
+			}
 		}
 
 		return avp / results.size();

@@ -29,9 +29,9 @@ public class MangoDB {
 	
 	// Uses strings to uniquely represent documents.
 	// In this case, string will be filename of document.
-	public String[] documents() {
+	public Object[] documents() {
 		Set<String> keySet = mango.keySet();
-		String[] keyArray = (String[])keySet.toArray();
+		Object[] keyArray = keySet.toArray();
 		return keyArray;
 	}
 	

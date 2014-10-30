@@ -10,6 +10,8 @@ import java.util.Map;
 
 
 
+
+
 // import lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 
@@ -40,7 +42,7 @@ public class EvaluateQueries {
 		CharArraySet stopwords = IndexFiles.makeStopwordSet(stopwordFile);
 		
 		
-		System.out.println(evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile,
+		System.out.println("MAP for "+cacmDocsDir+": "+ evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile,
 				cacmAnswerFile, cacmNumResults, stopwords));
 
 		/*
@@ -107,18 +109,6 @@ public class EvaluateQueries {
 		}
 		return queryAnswerMap;
 	}
-
-	private static double precision(HashSet<String> answers,
-			List<String> results) {
-		double matches = 0;
-		for (String result : results) {
-			if (answers.contains(result))
-				matches++;
-		}
-
-		return matches / results.size();
-	}
-	
 	
 	private static double evaluate(String indexDir, String docsDir,
 			String queryFile, String answerFile, int numResults,
@@ -134,9 +124,29 @@ public class EvaluateQueries {
 		MangoDB queryIndex = new MangoDB();
 		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
 		
+		//MAP
+		//get AP of the query and add to total val
+		//divide by total queries
+		
+		double totalPrecision = 0;
+		
+		Object[] queryKeys = queryIndex.documents();
+		Object[] docKeys = docIndex.documents();
+		
+		for(Object key : queryKeys){
+			double queryPrecision= 0;
+			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
+			for(Object docName : docKeys){
+				queryPrecision += BM25Similarity.computeBM25Similarity(query, docName.toString(), docIndex);
+			}
+			double temp = queryPrecision/docIndex.documents().length;
+			System.out.println(key.toString() + ": "+temp);
+			totalPrecision += temp;
+		}
+		
 //		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
 		
-		return 0;
+		return totalPrecision/queryIndex.documentCount();
 	}
 	
 }

@@ -3,10 +3,18 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+
+
+
+
+
 
 
 
@@ -110,6 +118,20 @@ public class EvaluateQueries {
 		return queryAnswerMap;
 	}
 	
+	
+	private static double meanAverageprecision(HashSet<String> answers, ArrayList<ReturnDoc> results) {
+		double avp = 0;
+		int i = 1;
+		for (ReturnDoc result : results) {
+			if (answers.contains(result.getName()))
+				avp+= 1/i;
+			i++;
+		}
+
+		return avp / results.size();
+	}
+	
+	
 	private static double evaluate(String indexDir, String docsDir,
 			String queryFile, String answerFile, int numResults,
 			CharArraySet stopwords) {
@@ -121,32 +143,76 @@ public class EvaluateQueries {
 
 		// load queries and answer
 		Map<Integer, String> queries = loadQueries(queryFile);
+		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
 		MangoDB queryIndex = new MangoDB();
 		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
+		
 		
 		//MAP
 		//get AP of the query and add to total val
 		//divide by total queries
 		
-		double totalPrecision = 0;
 		
-		Object[] queryKeys = queryIndex.documents();
+		Object[] queryKeys = queryIndex.documents();		
 		Object[] docKeys = docIndex.documents();
 		
+		
 		for(Object key : queryKeys){
-			double queryPrecision= 0;
 			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
+			//search for query
+			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
+			
+			//Create list of documents
 			for(Object docName : docKeys){
-				queryPrecision += BM25Similarity.computeBM25Similarity(query, docName.toString(), docIndex);
+				//calculate bm25
+				Double bm25Score = BM25Similarity.computeBM25Similarity(query, docName.toString(), docIndex);
+				String fullDocName = docName.toString();
+				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), bm25Score);
+				queryResults.add(doc);
 			}
-			double temp = queryPrecision/docIndex.documents().length;
-			System.out.println(key.toString() + ": "+temp);
-			totalPrecision += temp;
+			//sort list of docs by score greatest first
+			Collections.sort(queryResults, new CustomComparator());	
+			
+			//Get query key for answers
+			Integer answersKey = Integer.parseInt(key.toString());
+			//calculate MAP
+			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
+			System.out.println("MAP for query "+key.toString() + " is: "+map);
+			
 		}
 		
 //		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
 		
-		return totalPrecision/queryIndex.documentCount();
+		return 0;
 	}
-	
 }
+
+class CustomComparator implements Comparator<ReturnDoc> {
+    @Override
+    public int compare(ReturnDoc o1, ReturnDoc o2) {
+    	double a = o1.getScore();
+    	double b = o2.getScore();
+    	int cmp = b > a ? 1 : b < a ? -1 : 0;
+        return  cmp;
+    }
+}
+
+class ReturnDoc{
+    
+    private String name;
+    private double score;	
+        
+    public ReturnDoc(String n, Double bm25Score){
+        this.name = n;
+        this.score = bm25Score;
+    }
+     
+    public String getName() {
+        return name;
+    }
+
+    public double getScore() {
+        return score;
+    }
+}
+

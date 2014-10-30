@@ -22,7 +22,7 @@ public class BM25Similarity {
 		double ri=0; // is the # of relevant docs containing term i (set to 0 if no relevancy info is known)
 		double R=0; //is the number of relevant docs for this query – (set to 0 if no relevancy info is known)
 
-		double dl = db.getDocLengthForDocument(docName); //get doc length
+		double dl = db.getDocLengthForDocument(docName) ; //get doc length
 		double avdl = db.getAvdl(); //get average doc length
 		double K = calculateK(dl,avdl); //is more complicated. Its role is basically to normalize the tf component by document length.
 

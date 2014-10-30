@@ -79,8 +79,8 @@ public class MangoDB {
 		return docLength.doubleValue(); 
 	}
 
-	public Integer numberOfDocumentsContainingTerm(String term){
-		Integer numDocs = 0;
+	public double numberOfDocumentsContainingTerm(String term){
+		double numDocs = 0;
 		
 		for (String docName : mango.keySet()){
 			HashMap<String, Integer> document = mango.get(docName);

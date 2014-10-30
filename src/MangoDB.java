@@ -35,11 +35,19 @@ public class MangoDB {
 		return keyArray;
 	}
 	
+	public Set<String> keys() {
+		return mango.keySet();
+	}
+	
 	public Integer frequencyForTokenInDocument(String docName, String token) {
 		HashMap<String, Integer> document = mango.get(docName);
 		if (document == null)
 			return null;
 		return document.get(token);
+	}
+	
+	public HashMap<String, Integer> get(String key) {
+		return mango.get(key);
 	}
 	
 	public HashMap<String, Integer> tokenFrequenciesForDocument(String docName) {

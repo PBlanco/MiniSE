@@ -3,10 +3,18 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+
+
+
+import java.util.Set;
+
 
 
 
@@ -119,6 +127,88 @@ public class EvaluateQueries {
 		return matches / results.size();
 	}
 	
+	private static HashMap<String, List<TFIDFResult>> atnatn(MangoDB docIndex, MangoDB queryIndex) {
+		HashMap<String, List<TFIDFResult>> results = new HashMap<String, List<TFIDFResult>>();
+		for (String query : queryIndex.keys()) {
+			ArrayList<TFIDFResult> scores = new ArrayList<TFIDFResult>();
+			for (String doc : docIndex.keys()) {
+				Set<String> queryTokens = queryIndex.get(query).keySet();
+				Set<String> docTokens = docIndex.get(doc).keySet();
+				Set<String> commonTokens = new HashSet<String>(docTokens);
+				commonTokens.addAll(queryTokens);
+				double score = 0;
+				for (String token : commonTokens) {
+					double queryATN = TFIDF.atn(token, query, docIndex);
+					double docATN = TFIDF.atn(token, doc, docIndex);
+					double product = queryATN * docATN;
+					score += product;
+				}
+				TFIDFResult res = new TFIDFResult(doc, score);
+				scores.add(res);
+			}
+			Collections.sort(scores);
+			results.put(query, scores.subList(0, 100));
+		}
+		return results;
+	}
+	
+	private static HashMap<String, List<TFIDFResult>> annbpn(MangoDB docIndex, MangoDB queryIndex) {
+		HashMap<String, List<TFIDFResult>> results = new HashMap<String, List<TFIDFResult>>();
+		for (String query : queryIndex.keys()) {
+			ArrayList<TFIDFResult> scores = new ArrayList<TFIDFResult>();
+			for (String doc : docIndex.keys()) {
+				Set<String> queryTokens = queryIndex.get(query).keySet();
+				Set<String> docTokens = docIndex.get(doc).keySet();
+				Set<String> commonTokens = new HashSet<String>(docTokens);
+				commonTokens.addAll(queryTokens);
+				double score = 0;
+				for (String token : commonTokens) {
+					double queryATN = TFIDF.ann(token, query);
+					double docATN = TFIDF.bpn(token, doc, docIndex);
+					double product = queryATN * docATN;
+					score += product;
+				}
+				TFIDFResult res = new TFIDFResult(doc, score);
+				scores.add(res);
+			}
+			Collections.sort(scores);
+			results.put(query, scores.subList(0, 100));
+		}
+		return results;
+	}
+	
+	private static HashMap<String, List<TFIDFResult>> atcatc(MangoDB docIndex, MangoDB queryIndex) {
+		HashMap<String, List<TFIDFResult>> results = new HashMap<String, List<TFIDFResult>>();
+		for (String query : queryIndex.keys()) {
+			ArrayList<TFIDFResult> scores = new ArrayList<TFIDFResult>();
+			for (String doc : docIndex.keys()) {
+				Set<String> queryTokens = queryIndex.get(query).keySet();
+				Set<String> docTokens = docIndex.get(doc).keySet();
+				Set<String> commonTokens = new HashSet<String>(docTokens);
+				commonTokens.addAll(queryTokens);
+				double score = 0;
+				ArrayList<Double> queries = new ArrayList<Double>(commonTokens.size());
+				ArrayList<Double> docs = new ArrayList<Double>(commonTokens.size());
+				for (String token : commonTokens) {
+					double queryATN = TFIDF.ann(token, query);
+					queries.add(queryATN);
+					double docATN = TFIDF.bpn(token, doc, docIndex);
+					docs.add(docATN);
+//					double product = queryATN * docATN;
+//					score += product;
+				}
+				double[] normQueries = TFIDF.normalizeWeights((Double[]) queries.toArray());
+				double[] normDocs = TFIDF.normalizeWeights((Double []) docs.toArray());
+				for (int i = 0; i < normQueries.length; i++)
+					score += (normQueries[i] * normDocs[i]);
+				TFIDFResult res = new TFIDFResult(doc, score);
+				scores.add(res);
+			}
+			Collections.sort(scores);
+			results.put(query, scores.subList(0, 100));
+		}
+		return results;
+	}
 	
 	private static double evaluate(String indexDir, String docsDir,
 			String queryFile, String answerFile, int numResults,
@@ -128,13 +218,15 @@ public class EvaluateQueries {
 		MangoDB docIndex = new MangoDB();
 		IndexFiles.buildIndex(indexDir, docsDir, stopwords, docIndex);
 
-
 		// load queries and answer
 		Map<Integer, String> queries = loadQueries(queryFile);
 		MangoDB queryIndex = new MangoDB();
 		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
 		
-//		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
+		HashMap<String, List<TFIDFResult>> atnatn = atnatn(docIndex, queryIndex);
+		HashMap<String, List<TFIDFResult>> annbpn = annbpn(docIndex, queryIndex);
+		HashMap<String, List<TFIDFResult>> atcatc = atcatc(docIndex, queryIndex);
+		//		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
 		
 		return 0;
 	}

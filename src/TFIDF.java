@@ -77,6 +77,10 @@ public class TFIDF {
 		return Math.log10((N / n));
 	}
 	
+	public static double atc(String query, HashMap<String, Integer> doc, MangoDB collection) {
+		return 0.0;
+		
+	}
 	public static double atn(String term, HashMap<String, Integer> doc, MangoDB collection) {
 		double tf = augmentedTF(term, doc);
 		// https://piazza.com/class/hz0gtmi8y6v6eo?cid=193
@@ -110,7 +114,7 @@ public class TFIDF {
 	}
 	
 	// https://piazza.com/class/hz0gtmi8y6v6eo?cid=253
-	public static double[] normalizeWeights(double[] weights) {
+	public static double[] normalizeWeights(Double[] weights) {
 		double denomInner = 0;
 		for (double num : weights)
 			denomInner += Math.pow(num, 2);

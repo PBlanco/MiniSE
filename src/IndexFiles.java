@@ -9,6 +9,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -59,17 +60,8 @@ public class IndexFiles {
 		return stopwordSet;
 	}
 	
-	public static ArrayList<String> removeStopWordsAndStem(String docpath, CharArraySet stopwords) throws IOException {
+	public static ArrayList<String> removeStopWordsAndStem(String docString, CharArraySet stopwords) throws IOException {
 		
-		//convert doc to string
-		String docString = "";
-		try{
-			docString = new Scanner( new File(docpath)).useDelimiter("\\A").next();
-			//System.out.println(docString);
-		}  catch (IOException e){
-			e.printStackTrace();
-			return null;
-		}
 		
 	    //initialize token stream with document
 	    @SuppressWarnings("deprecation")
@@ -99,9 +91,9 @@ public class IndexFiles {
 	}
 	
 	
-	public static HashMap<String, Integer> createDocumentTokenMapping(ArrayList<String> docTokensAL){
+	public static HashMap<String, Integer> createTokenMapping(ArrayList<String> tokensAL){
 		HashMap<String, Integer> tokenFrequencyMap = new HashMap<String, Integer>(); 
-		for(String token : docTokensAL){
+		for(String token : tokensAL){
 			int freq = tokenFrequencyMap.containsKey(token) ? tokenFrequencyMap.get(token) : 0;
 			tokenFrequencyMap.put(token, freq + 1);
 		}
@@ -157,19 +149,54 @@ public class IndexFiles {
 					if (docsPath != file.getName()){
 						path = docsPath + file.getName();
 					}
-
-					docTokenArrayList =removeStopWordsAndStem(path, stopwords);
+					
+					//convert doc to string
+					String docString = "";
+					try{
+						docString = new Scanner( new File(path)).useDelimiter("\\A").next();
+						//System.out.println(docString);
+					}  catch (IOException e){
+						e.printStackTrace();
+					}
+					
+					//Remove Stopwords and Stem
+					docTokenArrayList =removeStopWordsAndStem(docString, stopwords);
 
 					//Get doc name
 					//create term->frequency hashmap
-					HashMap<String, Integer> freqs = createDocumentTokenMapping(docTokenArrayList);
+					HashMap<String, Integer> freqs = createTokenMapping(docTokenArrayList);
 					//add to databse
-					database.setTokenFrequenciesForDocument(file.getName(), freqs);
+					database.setTokenFrequenciesForDocument(file.getName(), freqs, docTokenArrayList.size());
 				} catch (IOException e) {
 					System.out.println(" caught a " + e.getClass() + "\n with message: " + e.getMessage());
 					e.printStackTrace();
 				}
 			}
 		}
+	}
+	
+	public static void buildQueryIndex(Map<Integer, String> queries, CharArraySet stopwords, MangoDB database){
+		Date start = new Date();
+		System.out.println("Indexing queries...");
+		
+		for(Integer key : queries.keySet()){
+			//remove stopwords, stemm, and tokenize
+			ArrayList<String> tokenArrayList;
+			try {
+				tokenArrayList = removeStopWordsAndStem(queries.get(key), stopwords);
+			} catch (IOException e) {
+				System.out.println(" caught a " + e.getClass() + "\n with message: " + e.getMessage());
+				e.printStackTrace();
+				return;
+			}
+
+			//create term->frequency hashmap
+			HashMap<String, Integer> freqs = createTokenMapping(tokenArrayList);
+			//add to databse
+			database.setTokenFrequenciesForDocument(key.toString(), freqs, tokenArrayList.size());
+			
+		}
+		Date end = new Date();
+		System.out.println(end.getTime() - start.getTime() + " total milliseconds"); 
 	}
 }

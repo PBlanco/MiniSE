@@ -5,6 +5,13 @@ import java.util.Set;
 public class MangoDB {
 	private HashMap<String, HashMap<String, Integer>> mango;
 	
+	private double totalDocsLength=0;
+	
+	//getter for average document length
+	public double getAvdl(){
+		return (double) totalDocsLength/ documents().length; 
+	}
+	
 	public MangoDB() {
 		mango = new HashMap<String, HashMap<String, Integer>>();
 	}
@@ -39,12 +46,14 @@ public class MangoDB {
 		return mango.get(docName);
 	}
 	
-	public boolean setTokenFrequenciesForDocument(String docName, HashMap<String, Integer> freqs) {
+	public boolean setTokenFrequenciesForDocument(String docName, HashMap<String, Integer> freqs, double docLength) {
+		this.totalDocsLength += docLength;
 		Object r = mango.put(docName, freqs);
 		if (r == null)
 			return false;
 		return true;
 	}
+	
 	
 	public boolean setFrequencyForTokenInDocument(String docName, String token, Integer freq) {
 		HashMap<String, Integer> document = mango.get(docName);
@@ -70,4 +79,31 @@ public class MangoDB {
 		}
 		return docCount;
 	}
+
+	//Gets document length (dl) for passed in docname
+	public double getDocLengthForDocument(String docName){
+		HashMap<String, Integer> document = mango.get(docName);
+		if (document == null)
+			return 0;
+		
+		Set<String> terms = document.keySet();
+		Integer docLength = 0;
+		for (String s : terms) {
+			docLength += document.get(s);
+		}
+		return docLength.doubleValue(); 
+	}
+
+	public double numberOfDocumentsContainingTerm(String term){
+		double numDocs = 0;
+		
+		for (String docName : mango.keySet()){
+			HashMap<String, Integer> document = mango.get(docName);
+			if(document.get(term) != null)
+				numDocs+=1;
+		}
+		return numDocs;
+		
+	}
+	
 }

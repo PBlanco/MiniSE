@@ -8,11 +8,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.lucene.analysis.core.StopAnalyzer;
-import org.apache.lucene.analysis.core.StopFilter;
+
+
 // import lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
-import org.apache.lucene.util.Version;
 
 public class EvaluateQueries {
 	
@@ -126,34 +125,18 @@ public class EvaluateQueries {
 			CharArraySet stopwords) {
 
 		// Build Index
-		MangoDB database = new MangoDB();
-		IndexFiles.buildIndex(indexDir, docsDir, stopwords, database);
+		MangoDB docIndex = new MangoDB();
+		IndexFiles.buildIndex(indexDir, docsDir, stopwords, docIndex);
 
 
 		// load queries and answer
 		Map<Integer, String> queries = loadQueries(queryFile);
-		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
+		MangoDB queryIndex = new MangoDB();
+		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
 		
-		/*
-		// Search and evaluate
-		double sum = 0;
-		for (Integer i : queries.keySet()) {
-//			if (i == 1) { Commented out to calculate MAP
-				List<String> results = SearchFiles.searchQuery(indexDir, queries.get(i), numResults, stopwords);
-				sum += precision(queryAnswers.get(i), results);
-				System.out.printf("\nTopic %d  ", i);
-				System.out.print (results);
-				System.out.println();
-//			}
-			
-		}
-		
-
-		return sum / queries.size();
-		
-		// return 0;
-		*/
+//		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
 		
 		return 0;
 	}
+	
 }

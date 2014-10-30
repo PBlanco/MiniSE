@@ -50,13 +50,6 @@ public class EvaluateQueries {
 		
 		System.out.println(evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile,
 				cacmAnswerFile, cacmNumResults, stopwords));
-
-		/*
-		System.out.println("\n");
-		
-		System.out.println(evaluate(medIndexDir, medDocsDir, medQueryFile,
-				medAnswerFile, medNumResults, stopwords));
-		*/
 	}
 
 	private static Map<Integer, String> loadQueries(String filename) {
@@ -123,7 +116,6 @@ public class EvaluateQueries {
 			if (answers.contains(result))
 				matches++;
 		}
-
 		return matches / results.size();
 	}
 	
@@ -131,7 +123,9 @@ public class EvaluateQueries {
 		HashMap<String, List<TFIDFResult>> results = new HashMap<String, List<TFIDFResult>>();
 		for (String query : queryIndex.keys()) {
 			ArrayList<TFIDFResult> scores = new ArrayList<TFIDFResult>();
+			int count = 0;
 			for (String doc : docIndex.keys()) {
+				count++;
 				Set<String> queryTokens = queryIndex.get(query).keySet();
 				Set<String> docTokens = docIndex.get(doc).keySet();
 				Set<String> commonTokens = new HashSet<String>(docTokens);
@@ -145,6 +139,7 @@ public class EvaluateQueries {
 				}
 				TFIDFResult res = new TFIDFResult(doc, score);
 				scores.add(res);
+				System.out.println("" + count);
 			}
 			Collections.sort(scores);
 			results.put(query, scores.subList(0, 100));
@@ -194,8 +189,6 @@ public class EvaluateQueries {
 					queries.add(queryATN);
 					double docATN = TFIDF.bpn(token, doc, docIndex);
 					docs.add(docATN);
-//					double product = queryATN * docATN;
-//					score += product;
 				}
 				double[] normQueries = TFIDF.normalizeWeights((Double[]) queries.toArray());
 				double[] normDocs = TFIDF.normalizeWeights((Double []) docs.toArray());
@@ -223,10 +216,10 @@ public class EvaluateQueries {
 		MangoDB queryIndex = new MangoDB();
 		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
 		
+		// Calculate TF-IDF for each set of queries
 		HashMap<String, List<TFIDFResult>> atnatn = atnatn(docIndex, queryIndex);
 		HashMap<String, List<TFIDFResult>> annbpn = annbpn(docIndex, queryIndex);
 		HashMap<String, List<TFIDFResult>> atcatc = atcatc(docIndex, queryIndex);
-		//		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
 		
 		return 0;
 	}

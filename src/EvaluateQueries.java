@@ -120,8 +120,8 @@ public class EvaluateQueries {
 	
 	private static double meanAverageprecision(HashSet<String> answers, ArrayList<ReturnDoc> results) {
 		double avp = 0;
-		int matches = 0;
-		int docs = 0;
+		double matches = 0;
+		double docs = 0;
 		for (ReturnDoc result : results) {
 			docs++;
 			if (answers.contains(result.getName())){
@@ -130,7 +130,7 @@ public class EvaluateQueries {
 			}
 		}
 
-		return avp / results.size();
+		return avp/matches;
 	}
 	
 	private static String printDocs(ArrayList<ReturnDoc> docList, int number){
@@ -210,8 +210,8 @@ class CustomComparator implements Comparator<ReturnDoc> {
     }
 }
 
+//Doc returned from BM25
 class ReturnDoc{
-    
     private String name;
     private double score;	
         

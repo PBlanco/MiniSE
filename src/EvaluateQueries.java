@@ -41,8 +41,8 @@ public class EvaluateQueries {
 		String medQueryFile = "data/med_processed.query";    // MED query file
 		String medAnswerFile = "data/med_processed.rel";   // MED relevance judgements file
 		
-		int cacmNumResults = 10;
-		int medNumResults = 10;
+		int cacmNumResults = 100;
+		int medNumResults = 100;
 
 		
 		//tokenizer 
@@ -50,14 +50,13 @@ public class EvaluateQueries {
 		CharArraySet stopwords = IndexFiles.makeStopwordSet(stopwordFile);
 		
 		
-		System.out.println("MAP for "+cacmDocsDir+": "+ evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile,
-				cacmAnswerFile, cacmNumResults, stopwords));
+		evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile, cacmAnswerFile, cacmNumResults, stopwords);
 
 		
-		System.out.println("\n");
-		
-		System.out.println(evaluate(medIndexDir, medDocsDir, medQueryFile,
-				medAnswerFile, medNumResults, stopwords));
+//		System.out.println("\n");
+//		
+//		System.out.println(evaluate(medIndexDir, medDocsDir, medQueryFile,
+//				medAnswerFile, medNumResults, stopwords));
 		
 	}
 
@@ -134,13 +133,13 @@ public class EvaluateQueries {
 		return avp / results.size();
 	}
 	
-	private static String printFirst100(ArrayList<ReturnDoc> docList){
+	private static String printDocs(ArrayList<ReturnDoc> docList, int number){
 		int i = 0;
 		String ret = "[";
 		for (ReturnDoc doc : docList){
 			i++;
 			ret+=(doc.getName()+", ");
-			if (i == 100)
+			if (i == number)
 				break;
 		}
 		ret += "]";
@@ -192,8 +191,8 @@ public class EvaluateQueries {
 			Integer answersKey = Integer.parseInt(key.toString());
 			//calculate MAP
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
-			System.out.println("Query "+key.toString()+": "+ printFirst100(queryResults));
-			System.out.println("MAP for query "+key.toString() + " is: "+map);
+			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
+			System.out.printf("MAP for query "+key.toString() + " is: %1$.4f\n", map);
 			
 		}
 				

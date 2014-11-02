@@ -29,49 +29,29 @@ public class BM25Similarity {
 
 		
 		HashMap<String, Integer> document = db.tokenFrequenciesForDocument(docName);
-
+				
 		double N = db.documents().length; //is the total # of docs in the collection
-		
-		//Make a basic inverted index.... term->#docs ins
-		HashMap<String, Integer> qToDFreqMap =new HashMap<String, Integer>();
-		Object[] queryTerms = queryMap.keySet().toArray();
-		for (Object doc : db.documents()){
-			HashMap<String, Integer> docFreqMap = db.tokenFrequenciesForDocument(doc.toString());
-			for(Object term : queryTerms){
-				Integer termfInD = docFreqMap.get(term.toString());
-				if(termfInD != null){
-					int freq = qToDFreqMap.containsKey(term.toString()) ? qToDFreqMap.get(term.toString()) : 0;
-					qToDFreqMap.put(term.toString(), freq + 1);
-				}
-			}
-		}
-		
+				
 		double finalValue = 0;
 		for(String term : queryMap.keySet()){
-			// get the # of docs containing term 			
-			double ni=0; 
-			Integer tmp = qToDFreqMap.get(term);
-			if(tmp != null){
-				ni = tmp.doubleValue();
+			//check if the term is in the document, else we just skip it
+			Integer fiInteger = document.get(term);
+			double fi= 0;
+			if(fiInteger != null){
+				fi = fiInteger.doubleValue();
+				//calculate idf
+				double ni = (double)db.numberOfDocumentsWithTerm(term);
+				double qfi = queryMap.get(term).doubleValue();
+				
+				//Follow equation from lecture 12
+						
+				double firstpart = Math.log( ((ri+0.5)/(R-ri+0.5)) / ((ni-ri+0.5)/(N-ni-R+ri+0.5)) );
+				double secondpart = ((k1+1)*fi)/(K+fi);
+				double thirdpart = ((k2+1)/qfi)/(k2+qfi);
+				
+				finalValue += firstpart*secondpart*thirdpart;
 			}
-			
-			//get the frequency of term i in the doc under consideration
-			double fi = (document.get(term) != null)? document.get(term).doubleValue(): 0; 
-			// get the frequency of term i in the query
-			double qfi = (queryMap.get(term) != null)? queryMap.get(term).doubleValue(): 0; 
-
-			
-			double numFrac1 = (ri+0.5)/(R-ri+0.5);
-			double denFrac1 = (ni-ri+0.5)/(N-ni-R+ri+0.5);
-			
-			double numFrac2 = ((k1+1)*fi)/(K+fi);
-			double denFrac2 = (K+fi);
-			
-			double numFrac3 = (k2+1)*qfi;
-			double denFrac3 = k2+qfi;
-			
-			double val = Math.log(numFrac1/denFrac1) +(numFrac2/denFrac2)+(numFrac3/denFrac3);
-			finalValue += val;
+			 
 		}
 		return finalValue;
 	}

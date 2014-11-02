@@ -53,12 +53,12 @@ public class EvaluateQueries {
 		System.out.println("MAP for "+cacmDocsDir+": "+ evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile,
 				cacmAnswerFile, cacmNumResults, stopwords));
 
-		/*
+		
 		System.out.println("\n");
 		
 		System.out.println(evaluate(medIndexDir, medDocsDir, medQueryFile,
 				medAnswerFile, medNumResults, stopwords));
-		*/
+		
 	}
 
 	private static Map<Integer, String> loadQueries(String filename) {
@@ -134,6 +134,18 @@ public class EvaluateQueries {
 		return avp / results.size();
 	}
 	
+	private static String printFirst100(ArrayList<ReturnDoc> docList){
+		int i = 0;
+		String ret = "[";
+		for (ReturnDoc doc : docList){
+			i++;
+			ret+=(doc.getName()+", ");
+			if (i == 100)
+				break;
+		}
+		ret += "]";
+		return ret;
+	}
 	
 	private static double evaluate(String indexDir, String docsDir,
 			String queryFile, String answerFile, int numResults,
@@ -180,12 +192,11 @@ public class EvaluateQueries {
 			Integer answersKey = Integer.parseInt(key.toString());
 			//calculate MAP
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
+			System.out.println("Query "+key.toString()+": "+ printFirst100(queryResults));
 			System.out.println("MAP for query "+key.toString() + " is: "+map);
 			
 		}
-		
-//		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
-		
+				
 		return 0;
 	}
 }

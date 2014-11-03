@@ -136,7 +136,6 @@ public class TFIDF {
   }
   public static double computeatcatc(HashMap<String, Integer> query, String docName, MangoDB db){
 	  HashMap<String, Integer> document = db.tokenFrequenciesForDocument(docName);
-	  double dN = db.documents().length;
 	  
 	  double sum = 0.0;
 	  

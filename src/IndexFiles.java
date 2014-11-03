@@ -1,10 +1,7 @@
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Date;
@@ -12,22 +9,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.StopFilter;
 import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.util.CharArraySet;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.StringField;
-import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.IndexWriterConfig.OpenMode;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
 // import org.apache.lucene.util.Version;
 import org.apache.lucene.util.Version;
 
@@ -40,6 +27,7 @@ public class IndexFiles {
 	
 	public static CharArraySet makeStopwordSet(String filename){
 		BufferedReader reader = null;
+		@SuppressWarnings("deprecation")
 		CharArraySet stopwordSet = new CharArraySet(Version.LUCENE_44,0,false);
 		try {
 			File file = new File(filename);
@@ -147,7 +135,8 @@ public class IndexFiles {
 					
 					String path = file.getName();
 					if (docsPath != file.getName()){
-						path = docsPath + file.getName();
+						
+						path = docsPath+ "/" + file.getName();
 					}
 					
 					//convert doc to string

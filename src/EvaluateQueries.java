@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 
 // import lucene.analysis.core.StopAnalyzer;
@@ -46,8 +45,7 @@ public class EvaluateQueries {
 		
 //		System.out.println("\n");
 //		
-//		System.out.println(evaluate(medIndexDir, medDocsDir, medQueryFile,
-//				medAnswerFile, medNumResults, stopwords));
+//		evaluate(medIndexDir, medDocsDir, medQueryFile, medAnswerFile, medNumResults, stopwords);
 		
 	}
 
@@ -108,6 +106,114 @@ public class EvaluateQueries {
 		return queryAnswerMap;
 	}
 	
+	private static void bm25(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+		for(Object key : queryIndex.documents()){
+			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
+			//search for query
+			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
+
+			//Create list of documents
+			for(Object docName : docIndex.documents()){
+				//calculate bm25
+				Double bm25Score = BM25Similarity.computeBM25Similarity(query, docName.toString(), docIndex);
+				String fullDocName = docName.toString();
+				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), bm25Score);
+				queryResults.add(doc);
+			}
+			//sort list of docs by score greatest first
+			Collections.sort(queryResults, new CustomComparator());	
+
+			//Get query key for answers
+			Integer answersKey = Integer.parseInt(key.toString());
+			//calculate MAP
+			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
+			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
+			System.out.printf("MAP for query "+key.toString() + " is: %1$.4f\n", map);
+		}
+	}
+	
+	private static void atnatn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+		for(Object key : queryIndex.documents()){
+
+			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
+			//search for query
+			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
+
+			for(Object docName : docIndex.documents()){		
+				Double atnatnScore = TFIDF.computeAtnatn(query, docName.toString(), docIndex);
+				String fullDocName = docName.toString();
+				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), atnatnScore);
+				queryResults.add(doc);
+			}
+			//sort list of docs by score greatest first
+			Collections.sort(queryResults, new CustomComparator());	
+
+			//Get query key for answers
+			Integer answersKey = Integer.parseInt(key.toString());
+			//calculate MAP
+			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
+			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
+			System.out.printf("atn.atn MAP for query "+key.toString() + " is: %1$.4f\n", map);
+		}
+	}
+	
+	private static void atcatc(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+		for(Object key : queryIndex.documents()){
+			
+			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
+			//search for query
+			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
+				
+			for(Object docName : docIndex.documents()){		
+				Double atcatcScore = TFIDF.computeatcatc(query, docName.toString(), docIndex);
+				String fullDocName = docName.toString();
+				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), atcatcScore);
+				queryResults.add(doc);
+			}
+			//sort list of docs by score greatest first
+			Collections.sort(queryResults, new CustomComparator());	
+			
+			//Get query key for answers
+			Integer answersKey = Integer.parseInt(key.toString());
+			//calculate MAP
+			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
+			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
+			System.out.printf("atc.atc MAP for query "+key.toString() + " is: %1$.4f\n", map);
+		}
+	}
+	
+	private static void annbpn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+		for(Object key : queryIndex.documents()){
+			
+			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
+			//search for query
+			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
+			
+			//Create list of documents
+			
+			//compute ann
+			HashMap<String, Double> queryAnnMap = TFIDF.computeAnn(query);
+		
+			
+			for(Object docName : docIndex.documents()){		
+				
+				Double annBpnScore = TFIDF.computeAnnBpn(queryAnnMap, docName.toString(), docIndex);
+				String fullDocName = docName.toString();
+				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), annBpnScore);
+				queryResults.add(doc);
+			}
+			//sort list of docs by score greatest first
+			Collections.sort(queryResults, new CustomComparator());	
+			
+			//Get query key for answers
+			Integer answersKey = Integer.parseInt(key.toString());
+			//calculate MAP
+			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
+			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
+			System.out.printf("ann.bpn MAP for query "+key.toString() + " is: %1$.4f\n", map);
+		}
+	}
+	
 	
 	private static double meanAverageprecision(HashSet<String> answers, ArrayList<ReturnDoc> results) {
 		double avp = 0;
@@ -153,124 +259,10 @@ public class EvaluateQueries {
 		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
 		
 		
-		//MAP
-		//get AP of the query and add to total val
-		//divide by total queries
-		
-		
-		Object[] queryKeys = queryIndex.documents();		
-		Object[] docKeys = docIndex.documents();
-		
-		
-		
-		
-/*		
- 		//ann.bpn values
-		for(Object key : queryKeys){
-			
-			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
-			//search for query
-			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
-			
-			//Create list of documents
-			
-			//compute ann
-			HashMap<String, Double> queryAnnMap = TFIDF.computeAnn(query);
-		
-			
-			for(Object docName : docKeys){		
-				
-				Double annBpnScore = TFIDF.computeAnnBpn(queryAnnMap, docName.toString(), docIndex);
-				String fullDocName = docName.toString();
-				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), annBpnScore);
-				queryResults.add(doc);
-			}
-			//sort list of docs by score greatest first
-			Collections.sort(queryResults, new CustomComparator());	
-			
-			//Get query key for answers
-			Integer answersKey = Integer.parseInt(key.toString());
-			//calculate MAP
-			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
-			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("ann.bpn MAP for query "+key.toString() + " is: %1$.4f\n", map);
-		}
-
-		//atc.atc
-		for(Object key : queryKeys){
-			
-			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
-			//search for query
-			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
-				
-			for(Object docName : docKeys){		
-				Double atcatcScore = TFIDF.computeatcatc(query, docName.toString(), docIndex);
-				String fullDocName = docName.toString();
-				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), atcatcScore);
-				queryResults.add(doc);
-			}
-			//sort list of docs by score greatest first
-			Collections.sort(queryResults, new CustomComparator());	
-			
-			//Get query key for answers
-			Integer answersKey = Integer.parseInt(key.toString());
-			//calculate MAP
-			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
-			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("atc.atc MAP for query "+key.toString() + " is: %1$.4f\n", map);
-		}
-		*/
-		
-		//atn.atn
-		for(Object key : queryKeys){
-
-			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
-			//search for query
-			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
-
-			for(Object docName : docKeys){		
-				Double atnatnScore = TFIDF.computeAtnatn(query, docName.toString(), docIndex);
-				String fullDocName = docName.toString();
-				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), atnatnScore);
-				queryResults.add(doc);
-			}
-			//sort list of docs by score greatest first
-			Collections.sort(queryResults, new CustomComparator());	
-
-			//Get query key for answers
-			Integer answersKey = Integer.parseInt(key.toString());
-			//calculate MAP
-			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
-			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("atn.atn MAP for query "+key.toString() + " is: %1$.4f\n", map);
-		}
-
-		/*
-		for(Object key : queryKeys){
-			
-			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
-			//search for query
-			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
-			
-			//Create list of documents
-			for(Object docName : docKeys){
-				//calculate bm25
-				Double bm25Score = BM25Similarity.computeBM25Similarity(query, docName.toString(), docIndex);
-				String fullDocName = docName.toString();
-				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), bm25Score);
-				queryResults.add(doc);
-			}
-			//sort list of docs by score greatest first
-			Collections.sort(queryResults, new CustomComparator());	
-			
-			//Get query key for answers
-			Integer answersKey = Integer.parseInt(key.toString());
-			//calculate MAP
-			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
-			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("MAP for query "+key.toString() + " is: %1$.4f\n", map);
-		}
-		*/
+		annbpn(queryIndex, docIndex, queryAnswers, numResults);		
+		//atcatc(queryIndex, docIndex, queryAnswers, numResults);
+		//atnatn(queryIndex, docIndex, queryAnswers, numResults);
+		//bm25(queryIndex, docIndex, queryAnswers, numResults);
 				
 		return 0;
 	}

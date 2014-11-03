@@ -128,7 +128,7 @@ public class EvaluateQueries {
 			//calculate MAP
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
 			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("MAP for query "+key.toString() + " is: %1$.4f\n", map);
+			System.out.printf("MAP for query "+key.toString() + " is: %1$.2f\n", map);
 		}
 	}
 	
@@ -153,7 +153,7 @@ public class EvaluateQueries {
 			//calculate MAP
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
 			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("atn.atn MAP for query "+key.toString() + " is: %1$.4f\n", map);
+			System.out.printf("atn.atn MAP for query "+key.toString() + " is: %1$.2f\n", map);
 		}
 	}
 	
@@ -178,7 +178,7 @@ public class EvaluateQueries {
 			//calculate MAP
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
 			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("atc.atc MAP for query "+key.toString() + " is: %1$.4f\n", map);
+			System.out.printf("atc.atc MAP for query "+key.toString() + " is: %1$.2f\n", map);
 		}
 	}
 	
@@ -210,7 +210,7 @@ public class EvaluateQueries {
 			//calculate MAP
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
 			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("ann.bpn MAP for query "+key.toString() + " is: %1$.4f\n", map);
+			System.out.printf("ann.bpn MAP for query "+key.toString() + " is: %1$.2f\n", map);
 		}
 	}
 	

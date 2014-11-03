@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+
+
 // import lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 
@@ -18,7 +20,6 @@ public class EvaluateQueries {
 	
 	
 	public static void main(String[] args) {
-		/*edited this so it's only one doc */
 		String cacmDocsDir = "data/cacm/"; // directory containing CACM documents
 		String medDocsDir = "data/med"; // directory containing MED documents
 		
@@ -40,12 +41,14 @@ public class EvaluateQueries {
 		CharArraySet stopwords = IndexFiles.makeStopwordSet(stopwordFile);
 		
 		
-		evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile, cacmAnswerFile, cacmNumResults, stopwords);
+		System.out.println(evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile,
+				cacmAnswerFile, cacmNumResults, stopwords));
 
 		
-//		System.out.println("\n");
-//		
-//		evaluate(medIndexDir, medDocsDir, medQueryFile, medAnswerFile, medNumResults, stopwords);
+		System.out.println("\n");
+		
+		System.out.println(evaluate(medIndexDir, medDocsDir, medQueryFile,
+				medAnswerFile, medNumResults, stopwords));;
 		
 	}
 
@@ -106,7 +109,8 @@ public class EvaluateQueries {
 		return queryAnswerMap;
 	}
 	
-	private static void bm25(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+	private static double bm25(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+		double totalMAP = 0;
 		for(Object key : queryIndex.documents()){
 			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
 			//search for query
@@ -128,13 +132,15 @@ public class EvaluateQueries {
 			//calculate MAP
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
 			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("MAP for query "+key.toString() + " is: %1$.2f\n", map);
+			System.out.printf("BM25 MAP for query "+key.toString() + " is: %1$.2f\n", map);
+			totalMAP += map;
 		}
+		return totalMAP/queryIndex.documents().length;
 	}
 	
-	private static void atnatn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+	private static double atnatn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+		double totalMAP = 0;
 		for(Object key : queryIndex.documents()){
-
 			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
 			//search for query
 			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
@@ -154,10 +160,13 @@ public class EvaluateQueries {
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
 			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
 			System.out.printf("atn.atn MAP for query "+key.toString() + " is: %1$.2f\n", map);
+			totalMAP += map;
 		}
+		return totalMAP/queryIndex.documents().length;
 	}
 	
-	private static void atcatc(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+	private static double atcatc(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+		double totalMAP = 0;
 		for(Object key : queryIndex.documents()){
 			
 			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
@@ -179,10 +188,13 @@ public class EvaluateQueries {
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
 			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
 			System.out.printf("atc.atc MAP for query "+key.toString() + " is: %1$.2f\n", map);
+			totalMAP += map;
 		}
+		return totalMAP/queryIndex.documents().length;
 	}
 	
-	private static void annbpn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+	private static double annbpn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+		double totalMAP = 0;
 		for(Object key : queryIndex.documents()){
 			
 			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
@@ -211,7 +223,9 @@ public class EvaluateQueries {
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
 			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
 			System.out.printf("ann.bpn MAP for query "+key.toString() + " is: %1$.2f\n", map);
+			totalMAP += map;
 		}
+		return totalMAP/queryIndex.documents().length;
 	}
 	
 	
@@ -258,13 +272,11 @@ public class EvaluateQueries {
 		MangoDB queryIndex = new MangoDB();
 		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
 		
-		
-		annbpn(queryIndex, docIndex, queryAnswers, numResults);		
-		//atcatc(queryIndex, docIndex, queryAnswers, numResults);
-		//atnatn(queryIndex, docIndex, queryAnswers, numResults);
-		//bm25(queryIndex, docIndex, queryAnswers, numResults);
-				
-		return 0;
+		//============ Uncomment the one you want to run =====================
+		//return annbpn(queryIndex, docIndex, queryAnswers, numResults);		
+		//return atcatc(queryIndex, docIndex, queryAnswers, numResults);
+		//return atnatn(queryIndex, docIndex, queryAnswers, numResults);
+		return bm25(queryIndex, docIndex, queryAnswers, numResults);
 	}
 }
 

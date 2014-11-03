@@ -31,8 +31,12 @@ public class MangoDB {
 	// In this case, string will be filename of document.
 	public Object[] documents() {
 		Set<String> keySet = mango.keySet();
-		Object[] keyArray = keySet.toArray();
+		Object[] keyArray = (Object[])keySet.toArray();
 		return keyArray;
+	}
+	
+	public Set<String> keys() {
+		return mango.keySet();
 	}
 	
 	public Integer frequencyForTokenInDocument(String docName, String token) {
@@ -40,6 +44,10 @@ public class MangoDB {
 		if (document == null)
 			return null;
 		return document.get(token);
+	}
+	
+	public HashMap<String, Integer> get(String key) {
+		return mango.get(key);
 	}
 	
 	public HashMap<String, Integer> tokenFrequenciesForDocument(String docName) {

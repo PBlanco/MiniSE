@@ -11,15 +11,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-
-
-
-
-
-
-
-
-
 // import lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 
@@ -171,7 +162,92 @@ public class EvaluateQueries {
 		Object[] docKeys = docIndex.documents();
 		
 		
+		
+		
+/*		
+ 		//ann.bpn values
 		for(Object key : queryKeys){
+			
+			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
+			//search for query
+			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
+			
+			//Create list of documents
+			
+			//compute ann
+			HashMap<String, Double> queryAnnMap = TFIDF.computeAnn(query);
+		
+			
+			for(Object docName : docKeys){		
+				
+				Double annBpnScore = TFIDF.computeAnnBpn(queryAnnMap, docName.toString(), docIndex);
+				String fullDocName = docName.toString();
+				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), annBpnScore);
+				queryResults.add(doc);
+			}
+			//sort list of docs by score greatest first
+			Collections.sort(queryResults, new CustomComparator());	
+			
+			//Get query key for answers
+			Integer answersKey = Integer.parseInt(key.toString());
+			//calculate MAP
+			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
+			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
+			System.out.printf("ann.bpn MAP for query "+key.toString() + " is: %1$.4f\n", map);
+		}
+
+		//atc.atc
+		for(Object key : queryKeys){
+			
+			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
+			//search for query
+			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
+				
+			for(Object docName : docKeys){		
+				Double atcatcScore = TFIDF.computeatcatc(query, docName.toString(), docIndex);
+				String fullDocName = docName.toString();
+				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), atcatcScore);
+				queryResults.add(doc);
+			}
+			//sort list of docs by score greatest first
+			Collections.sort(queryResults, new CustomComparator());	
+			
+			//Get query key for answers
+			Integer answersKey = Integer.parseInt(key.toString());
+			//calculate MAP
+			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
+			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
+			System.out.printf("atc.atc MAP for query "+key.toString() + " is: %1$.4f\n", map);
+		}
+		*/
+		
+		//atn.atn
+		for(Object key : queryKeys){
+
+			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
+			//search for query
+			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
+
+			for(Object docName : docKeys){		
+				Double atnatnScore = TFIDF.computeAtnatn(query, docName.toString(), docIndex);
+				String fullDocName = docName.toString();
+				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), atnatnScore);
+				queryResults.add(doc);
+			}
+			//sort list of docs by score greatest first
+			Collections.sort(queryResults, new CustomComparator());	
+
+			//Get query key for answers
+			Integer answersKey = Integer.parseInt(key.toString());
+			//calculate MAP
+			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
+			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
+			System.out.printf("atn.atn MAP for query "+key.toString() + " is: %1$.4f\n", map);
+		}
+
+		/*
+		for(Object key : queryKeys){
+			
 			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
 			//search for query
 			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
@@ -193,8 +269,8 @@ public class EvaluateQueries {
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
 			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
 			System.out.printf("MAP for query "+key.toString() + " is: %1$.4f\n", map);
-			
 		}
+		*/
 				
 		return 0;
 	}
@@ -228,4 +304,5 @@ class ReturnDoc{
         return score;
     }
 }
+
 

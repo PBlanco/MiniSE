@@ -241,7 +241,7 @@ public class EvaluateQueries {
 			}
 		}
 
-		return avp/matches;
+		return avp/answers.size();
 	}
 	
 	private static String printDocs(ArrayList<ReturnDoc> docList, int number){
@@ -276,7 +276,7 @@ public class EvaluateQueries {
 		//return annbpn(queryIndex, docIndex, queryAnswers, numResults);		
 		//return atcatc(queryIndex, docIndex, queryAnswers, numResults);
 		//return atnatn(queryIndex, docIndex, queryAnswers, numResults);
-		return bm25(queryIndex, docIndex, queryAnswers, numResults);
+		//return bm25(queryIndex, docIndex, queryAnswers, numResults);
 	}
 }
 

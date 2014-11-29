@@ -13,7 +13,7 @@ public class TFIDF {
     String[] pieces = pieces(source);
     int freq = 0;
     for (String piece : pieces)
-      if (piece.equals(source))
+      if (piece.equals(term))
         freq++;
     return freq;
   }

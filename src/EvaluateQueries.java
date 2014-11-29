@@ -40,15 +40,17 @@ public class EvaluateQueries {
 		String stopwordFile = "stopwords/stopwords_indri.txt"; //Stop word file
 		CharArraySet stopwords = IndexFiles.makeStopwordSet(stopwordFile);
 		
-		
-		System.out.println(evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile,
-				cacmAnswerFile, cacmNumResults, stopwords));
+		double cacmMAP = evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile,
+				cacmAnswerFile, cacmNumResults, stopwords);
+		System.out.println("CACM MAP: " + String.valueOf(cacmMAP));
 
 		
 		System.out.println("\n");
 		
-		System.out.println(evaluate(medIndexDir, medDocsDir, medQueryFile,
-				medAnswerFile, medNumResults, stopwords));;
+		double medMAP = evaluate(medIndexDir, medDocsDir, medQueryFile,
+				medAnswerFile, medNumResults, stopwords);
+		System.out.println("MED MAP: "+ String.valueOf(medMAP)+"\n");;
+		System.out.println("CACM MAP: " + String.valueOf(cacmMAP));
 		
 	}
 

@@ -206,16 +206,15 @@ public class TFIDF {
 
 	  for (String term : query.keySet()){
 		  if (document.get(term) != null){
-			  double tfq = query.get(term);
-			  double tfd = document.get(term);
+//			  double tfq = query.get(term);
+//			  double tfd = document.get(term);
+//			  
+//			  double aq = 0.5 + 0.5*(tfq/maxTfq);
+//			  double ad = 0.5 + 0.5*(tfd/maxTfd);
+//			  
+//			  double idf = idf(term, db);
 			  
-			  double aq = 0.5 + 0.5*(tfq/maxTfq);
-			  double ad = 0.5 + 0.5*(tfd/maxTfd);
-			  
-			  double idf = idf(term, db);
-			  
-			  sum += (aq * idf) * (ad * idf);
-			  
+			  sum += atn(term, query, db) * atn(term, document, db);
 		  }
 	  }
 	  return sum;

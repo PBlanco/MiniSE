@@ -274,8 +274,8 @@ public class EvaluateQueries {
 		
 		//============ Uncomment the one you want to run =====================
 		//return annbpn(queryIndex, docIndex, queryAnswers, numResults);		
-		return atcatc(queryIndex, docIndex, queryAnswers, numResults);
-		//return atnatn(queryIndex, docIndex, queryAnswers, numResults);
+		//return atcatc(queryIndex, docIndex, queryAnswers, numResults);
+		return atnatn(queryIndex, docIndex, queryAnswers, numResults);
 		//return bm25(queryIndex, docIndex, queryAnswers, numResults);
 	}
 }

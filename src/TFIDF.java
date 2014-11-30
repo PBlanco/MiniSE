@@ -77,11 +77,9 @@ public class TFIDF {
   public static double idf(String term, MangoDB database) {
     double N = (double)database.documentCount();
     double n = (double)database.numberOfDocumentsWithTerm(term);
-    double log = Math.log10((N / n));
+    double log = Math.log((N / n));
     return log;
   }
-  
-
   
   public static double atn(String term, HashMap<String, Integer> doc, MangoDB collection) {
     double tf = augmentedTF(term, doc);

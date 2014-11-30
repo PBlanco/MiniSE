@@ -74,7 +74,7 @@ public class MangoDB {
 	}
 	
 	public int documentCount() {
-		return mango.keySet().size();
+		return mango.size();
 	}
 	
 	public int numberOfDocumentsWithTerm(String term) {

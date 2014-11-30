@@ -13,7 +13,7 @@ public class TFIDF {
     String[] pieces = pieces(source);
     int freq = 0;
     for (String piece : pieces)
-      if (piece.equals(term))
+      if (piece.equals(source))
         freq++;
     return freq;
   }
@@ -134,13 +134,34 @@ public class TFIDF {
 	  return annMap;
   }
   public static double computeatcatc(HashMap<String, Integer> query, String docName, MangoDB db){
+	  /*
+	   * first triplet atn gives the term weighting of the document vector
+	   * second triplet atn gives the weighting in the query vector
+	   * a -> tf component of the weighting
+	   * t -> df component of the weighting
+	   * c -> form of normalization used
+	   */
+	  
 	  HashMap<String, Integer> document = db.tokenFrequenciesForDocument(docName);
 	  
 	  double sum = 0.0;
 	  
+	  
+	  /*
+	   * Loop through all terms in query
+	   * 	if term in document:
+	   * 		compute augmented tf for query
+	   * 		computer t (idf) for query
+	   */
+	  
+	  
+	  
+	  
+	  
+	  
 	  double maxTfq = maxTF(query);
 	  double maxTfd = maxTF(document);
-	  
+
 	  ArrayList<Double> qWeights = new ArrayList<Double>();
 	  ArrayList<Double> dWeights = new ArrayList<Double>();
 	  
@@ -161,6 +182,9 @@ public class TFIDF {
 			  dWeights.add(ad * idf);
 		  }
 	  }
+	  
+	  
+	  
 	  Object[] qWeightsArray = qWeights.toArray();
 	  double[] normalizedQ = normalizeWeights(qWeightsArray);
 	  Object[] dWeightsArray = dWeights.toArray();
@@ -195,7 +219,15 @@ public class TFIDF {
   }
   
   public static double computeAtnatn(HashMap<String, Integer> query, String docName, MangoDB db){
-	  HashMap<String, Integer> document = db.tokenFrequenciesForDocument(docName);
+	  /*
+	   * first triplet atn gives the term weighting of the document vector
+	   * second triplet atn gives the weighting in the query vector
+	   * a -> tf component of the weighting
+	   * t -> df component of the weighting
+	   * n -> form of normalization used
+	   */
+	  //get document
+	  HashMap<String, Integer> document = db.tokenFrequenciesForDocument(docName); 
 	  
 	  double sum = 0.0;
 	  

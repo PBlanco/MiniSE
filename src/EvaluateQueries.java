@@ -40,15 +40,17 @@ public class EvaluateQueries {
 		String stopwordFile = "stopwords/stopwords_indri.txt"; //Stop word file
 		CharArraySet stopwords = IndexFiles.makeStopwordSet(stopwordFile);
 		
-		
-		System.out.println(evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile,
-				cacmAnswerFile, cacmNumResults, stopwords));
+		double cacmMAP = evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile,
+				cacmAnswerFile, cacmNumResults, stopwords);
+		System.out.println("CACM MAP: " + String.valueOf(cacmMAP));
 
 		
 		System.out.println("\n");
 		
-		System.out.println(evaluate(medIndexDir, medDocsDir, medQueryFile,
-				medAnswerFile, medNumResults, stopwords));;
+		double medMAP = evaluate(medIndexDir, medDocsDir, medQueryFile,
+				medAnswerFile, medNumResults, stopwords);
+		System.out.println("MED MAP: "+ String.valueOf(medMAP)+"\n");;
+		System.out.println("CACM MAP: " + String.valueOf(cacmMAP));
 		
 	}
 
@@ -140,11 +142,15 @@ public class EvaluateQueries {
 	
 	private static double atnatn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
 		double totalMAP = 0;
+		
+		//loop through queries
 		for(Object key : queryIndex.documents()){
 			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
-			//search for query
+			
+			//create list to store score results
 			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
 
+			//loop through documents
 			for(Object docName : docIndex.documents()){		
 				Double atnatnScore = TFIDF.computeAtnatn(query, docName.toString(), docIndex);
 				String fullDocName = docName.toString();
@@ -239,6 +245,8 @@ public class EvaluateQueries {
 				matches++;
 				avp+= matches/docs;
 			}
+			if(docs == 100)
+				break;
 		}
 
 		return avp/answers.size();

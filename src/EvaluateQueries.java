@@ -142,11 +142,15 @@ public class EvaluateQueries {
 	
 	private static double atnatn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
 		double totalMAP = 0;
+		
+		//loop through queries
 		for(Object key : queryIndex.documents()){
 			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
-			//search for query
+			
+			//create list to store score results
 			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
 
+			//loop through documents
 			for(Object docName : docIndex.documents()){		
 				Double atnatnScore = TFIDF.computeAtnatn(query, docName.toString(), docIndex);
 				String fullDocName = docName.toString();
@@ -241,6 +245,8 @@ public class EvaluateQueries {
 				matches++;
 				avp+= matches/docs;
 			}
+			if(docs == 100)
+				break;
 		}
 
 		return avp/answers.size();
@@ -275,9 +281,9 @@ public class EvaluateQueries {
 		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
 		
 		//============ Uncomment the one you want to run =====================
-		return annbpn(queryIndex, docIndex, queryAnswers, numResults);		
+		//return annbpn(queryIndex, docIndex, queryAnswers, numResults);		
 		//return atcatc(queryIndex, docIndex, queryAnswers, numResults);
-		//return atnatn(queryIndex, docIndex, queryAnswers, numResults);
+		return atnatn(queryIndex, docIndex, queryAnswers, numResults);
 		//return bm25(queryIndex, docIndex, queryAnswers, numResults);
 	}
 }

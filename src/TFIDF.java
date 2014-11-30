@@ -20,7 +20,7 @@ public class TFIDF {
   // Doc should be stemmed and tokenized
   // Essentially should be same data as stored in Mango
   public static int termFrequency(String term, HashMap<String, Integer> doc) {
-    return doc.get(term);
+    return doc.containsKey(term) ? doc.get(term) : 0;
   }
   public static int maxTF(String str) {
     String[] pieces = pieces(str);
@@ -114,15 +114,15 @@ public class TFIDF {
   }
   
   // https://piazza.com/class/hz0gtmi8y6v6eo?cid=253
-  public static double[] normalizeWeights(Object[] weights) {
+  public static double[] normalizeWeights(ArrayList<Double> weights) {
     double denomInner = 0;
-    for (Object num : weights)
-      denomInner += Math.pow(((Double)num).doubleValue(), 2);
+    for (Double num : weights)
+      denomInner += Math.pow(num.doubleValue(), 2);
     double denom = Math.sqrt(denomInner);
     double normFactor = 1.0 / denom;
-    double[] mapped = new double[weights.length];
-    for (int i = 0; i < weights.length; i++)
-      mapped[i] = (((Double)weights[i]).doubleValue()) * normFactor;
+    double[] mapped = new double[weights.size()];
+    for (int i = 0; i < weights.size(); i++)
+      mapped[i] = (weights.get(i).doubleValue()) * normFactor;
     return mapped;
   }
   
@@ -145,8 +145,7 @@ public class TFIDF {
 	  HashMap<String, Integer> document = db.tokenFrequenciesForDocument(docName);
 	  
 	  double sum = 0.0;
-	  
-	  
+	    
 	  /*
 	   * Loop through all terms in query
 	   * 	if term in document:
@@ -154,47 +153,62 @@ public class TFIDF {
 	   * 		computer t (idf) for query
 	   */
 	  
-	  
-	  
-	  
-	  
-	  
-	  double maxTfq = maxTF(query);
-	  double maxTfd = maxTF(document);
-
-	  ArrayList<Double> qWeights = new ArrayList<Double>();
-	  ArrayList<Double> dWeights = new ArrayList<Double>();
-	  
+	  ArrayList<Double> queryWeights = new ArrayList<Double>();
+	  ArrayList<Double> documentWeights = new ArrayList<Double>();
 	  for (String term : query.keySet()){
-		  if (document.get(term) != null){
-//			  double tfq = query.get(term);
-//			  double tfd = document.get(term);
-//			  
-//			  double aq = 0.5 + 0.5*(tfq/maxTfq);
-//			  double ad = 0.5 + 0.5*(tfd/maxTfd);
-			  
-			  double aq = augmentedTF(term, query);
-			  double ad = augmentedTF(term, document);
-			  
-			  double idf = idf(term, db);
-			  
-			  qWeights.add(aq * idf);
-			  dWeights.add(ad * idf);
+		  if (document.get(term) != null){	// Comment out this check?
+			  double queryWeight = atn(term, query, db);
+			  queryWeights.add(queryWeight);
+			  double docWeight = atn(term, document, db);
+			  documentWeights.add(docWeight);
+//			  sum += queryWeight * docWeight;
 		  }
 	  }
-	  
-	  
-	  
-	  Object[] qWeightsArray = qWeights.toArray();
-	  double[] normalizedQ = normalizeWeights(qWeightsArray);
-	  Object[] dWeightsArray = dWeights.toArray();
-	  double[] normalizedD = normalizeWeights(dWeightsArray);
-	  
-	  for (int i = 0; i < normalizedQ.length; i++) {
-		  double prod = normalizedQ[i] * normalizedD[i];
-		  sum += prod;
-	  }
+	  if (queryWeights.size() == 0)
+		  return 0.0;
+//	  System.out.println("Queryweights size: " + queryWeights.size());
+	  double[] normalizedQueryWeights = normalizeWeights(queryWeights);
+	  double[] normalizedDocumentWeights = normalizeWeights(documentWeights);
+//	  System.out.println("Normalized size: " + normalizedQueryWeights.length);
+	  for (int i = 0; i < normalizedQueryWeights.length; i++)
+		  sum += (normalizedQueryWeights[i] * normalizedDocumentWeights[i]);
 	  return sum;
+//	  
+//	  
+//	  
+//	  
+//	  
+//	  
+//	  double maxTfq = maxTF(query);
+//	  double maxTfd = maxTF(document);
+//
+//	  ArrayList<Double> qWeights = new ArrayList<Double>();
+//	  ArrayList<Double> dWeights = new ArrayList<Double>();
+//	  
+//	  for (String term : query.keySet()){
+//		  if (document.get(term) != null){
+//			  double aq = augmentedTF(term, query);
+//			  double ad = augmentedTF(term, document);
+//			  
+//			  double idf = idf(term, db);
+//			  
+//			  qWeights.add(aq * idf);
+//			  dWeights.add(ad * idf);
+//		  }
+//	  }
+//	  
+//	  
+//	  
+//	  Object[] qWeightsArray = qWeights.toArray();
+//	  double[] normalizedQ = normalizeWeights(qWeightsArray);
+//	  Object[] dWeightsArray = dWeights.toArray();
+//	  double[] normalizedD = normalizeWeights(dWeightsArray);
+//	  
+//	  for (int i = 0; i < normalizedQ.length; i++) {
+//		  double prod = normalizedQ[i] * normalizedD[i];
+//		  sum += prod;
+//	  }
+//	  return sum;
   }
   
   //============= Compute Document Values =============

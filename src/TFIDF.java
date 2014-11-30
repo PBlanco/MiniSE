@@ -77,7 +77,8 @@ public class TFIDF {
   public static double idf(String term, MangoDB database) {
     double N = (double)database.documentCount();
     double n = (double)database.numberOfDocumentsWithTerm(term);
-    return Math.log10((N / n));
+    double log = Math.log10((N / n));
+    return log;
   }
   
 
@@ -147,19 +148,19 @@ public class TFIDF {
 	  
 	  for (String term : query.keySet()){
 		  if (document.get(term) != null){
-			  double tfq = query.get(term);
-			  double tfd = document.get(term);
+//			  double tfq = query.get(term);
+//			  double tfd = document.get(term);
+//			  
+//			  double aq = 0.5 + 0.5*(tfq/maxTfq);
+//			  double ad = 0.5 + 0.5*(tfd/maxTfd);
 			  
-			  double aq = 0.5 + 0.5*(tfq/maxTfq);
-			  double ad = 0.5 + 0.5*(tfd/maxTfd);
+			  double aq = augmentedTF(term, query);
+			  double ad = augmentedTF(term, document);
 			  
 			  double idf = idf(term, db);
 			  
 			  qWeights.add(aq * idf);
 			  dWeights.add(ad * idf);
-			  
-			  
-			  
 		  }
 	  }
 	  Object[] qWeightsArray = qWeights.toArray();
@@ -186,7 +187,8 @@ public class TFIDF {
 			  double n = (double)db.numberOfDocumentsWithTerm(term); 
 			  double tf = augmentedTF(term, document);
 			  double pidf = Math.max(0, Math.log((N - n) / n));
-			  double bpn = tf * pidf;
+			  double b = termFrequency(term, document) > 0 ? 1 : 0;
+			  double bpn = tf * b *pidf;
 			  double tq = queryAnnMap.get(term);
 			  sum += tq * bpn;
 		  }

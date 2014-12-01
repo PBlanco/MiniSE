@@ -137,13 +137,28 @@ public class TFIDF {
   
   
   public static double smartIDF(String term, MangoDB database, HashMap<String,Integer> invertedIndex) {
-	    double N = (double)database.documentCount();
 	    double n = invertedIndex.containsKey(term) ? invertedIndex.get(term).doubleValue() : 0;
-	    double log = 0;
-	    if(n != 0){
-	    	log = Math.log((N / n));
-	    }
-	    return log;
+	    if (n == 0)
+	    	return 0;
+	    return Math.log10((double)database.documentCount()) - (double)Math.log10(n);
+  }
+  
+  
+  public static ArrayList<Double> computeNorm(ArrayList<Double> list){
+	//get query norm weight
+	  double norm = 0;
+	  for (double weight : list){
+		  norm += Math.pow(weight, 2);
+	  }
+	  norm = (double)Math.sqrt(norm);
+	  
+	  ArrayList<Double> normalizedList = new ArrayList<Double>();
+	  for (double weight : list){ 
+		  normalizedList.add(weight/norm);
+	  }
+	  
+	  return normalizedList;
+	  
   }
   
   public static double computeatcatc(HashMap<String, Integer> query, String docName, MangoDB db, HashMap<String,Integer>invertedIndex){
@@ -169,13 +184,12 @@ public class TFIDF {
 	  ArrayList<Double> queryWeights = new ArrayList<Double>();
 	  ArrayList<Double> documentWeights = new ArrayList<Double>();
 	  for (String term : query.keySet()){
-		  
 		  //calculate query tf*idf
 		  double qtf = augmentedTF(term, query);
 		  double idf = smartIDF(term, db, invertedIndex);
 		  queryWeights.add(qtf*idf);
 		  
-		  //if not in document set to 5
+		  //if term not in document set to .5 because of augmented tf system
 		  if (document.get(term) == null){	
 			  documentWeights.add((0.5 * idf));
 		  } else {
@@ -184,16 +198,13 @@ public class TFIDF {
 		  }
 	  }
 	  
+	  //compute normalized weighted vectors
+	  ArrayList<Double> normalizedQueryWeights = computeNorm(queryWeights);
+	  ArrayList<Double> normalizedDocumentWeights = computeNorm(documentWeights);
 	  
-	  
-////	  System.out.println("Queryweights size: " + queryWeights.size());
-//	  double[] normalizedQueryWeights = normalizeWeights(queryWeights);
-//	  double[] normalizedDocumentWeights = normalizeWeights(documentWeights);
-////	  System.out.println("Normalized size: " + normalizedQueryWeights.length);
-//	  for (int i = 0; i < normalizedQueryWeights.length; i++)
-//		  sum += (normalizedQueryWeights[i] * normalizedDocumentWeights[i]);
-	  for (int i = 0; i < queryWeights.size(); i++)
-		  sum += (queryWeights.get(i) * documentWeights.get(i));
+	  //take dot products of Query and Document Vector
+	  for (int i = 0; i < normalizedQueryWeights.size(); i++)
+		  sum += (normalizedQueryWeights.get(i).doubleValue() * normalizedDocumentWeights.get(i).doubleValue());
 	  
 	  return sum;
   }
@@ -245,7 +256,7 @@ public class TFIDF {
 //			  
 //			  double idf = idf(term, db);
 			  
-			  sum += atn(term, query, db) * atn(term, document, db);
+			  sum += at(term, query, db) * at(term, document, db);
 		  }
 	  }
 	  return sum;

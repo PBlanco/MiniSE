@@ -219,6 +219,7 @@ public class EvaluateQueries {
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
 			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
 			System.out.printf("atc.atc MAP for query "+key.toString() + " is: %1$.2f\n", map);
+			
 			totalMAP += map;
 		}
 		return totalMAP/queryIndex.documents().length;

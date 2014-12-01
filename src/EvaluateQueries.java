@@ -226,6 +226,24 @@ public class EvaluateQueries {
 	
 	private static double annbpn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
 		double totalMAP = 0;
+		
+		//Create inverted index
+		System.out.print("Creating inverted index");
+		HashMap<String, Integer> invertedIndex = new HashMap<String, Integer>();
+		for(Object docName : docIndex.documents()){
+			System.out.print(".");
+			HashMap<String, Integer>document = docIndex.get(String.valueOf(docName));
+			for(String term : document.keySet()){
+				if(invertedIndex.containsKey(term) ){
+					invertedIndex.put(term, (invertedIndex.get(term) +1)); 
+				} else {
+					invertedIndex.put(term, 1);
+				}
+			}
+		}
+		System.out.print("\n");
+		System.out.print("Done!!\n");
+		int docCount = 0;
 		for(Object key : queryIndex.documents()){
 			
 			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
@@ -240,7 +258,7 @@ public class EvaluateQueries {
 			
 			for(Object docName : docIndex.documents()){		
 				
-				Double annBpnScore = TFIDF.computeAnnBpn(queryAnnMap, docName.toString(), docIndex);
+				Double annBpnScore = TFIDF.computeAnnBpn(queryAnnMap, docName.toString(), docIndex, invertedIndex);
 				String fullDocName = docName.toString();
 				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), annBpnScore);
 				queryResults.add(doc);
@@ -264,6 +282,7 @@ public class EvaluateQueries {
 		double avp = 0;
 		double matches = 0;
 		double docs = 0;
+		System.out.println("=== Results count: " + results.size());
 		for (ReturnDoc result : results) {
 			docs++;
 			if (answers.contains(result.getName())){
@@ -273,6 +292,7 @@ public class EvaluateQueries {
 			if(docs == 100)
 				break;
 		}
+		System.out.println("Matches: " + matches);
 
 		return avp/answers.size();
 	}
@@ -307,8 +327,8 @@ public class EvaluateQueries {
 		
 		//============ Uncomment the one you want to run =====================
 		//return annbpn(queryIndex, docIndex, queryAnswers, numResults);		
-		//return atcatc(queryIndex, docIndex, queryAnswers, numResults);
-		return atnatn(queryIndex, docIndex, queryAnswers, numResults);
+		return atcatc(queryIndex, docIndex, queryAnswers, numResults);
+		//return atnatn(queryIndex, docIndex, queryAnswers, numResults);
 		//return bm25(queryIndex, docIndex, queryAnswers, numResults);
 	}
 }

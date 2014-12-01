@@ -81,7 +81,7 @@ public class TFIDF {
     return log;
   }
   
-  public static double atn(String term, HashMap<String, Integer> doc, MangoDB collection) {
+  public static double at(String term, HashMap<String, Integer> doc, MangoDB collection) {
     double tf = augmentedTF(term, doc);
     // https://piazza.com/class/hz0gtmi8y6v6eo?cid=193
     double idf = idf(term, collection);
@@ -133,7 +133,20 @@ public class TFIDF {
 		  annMap.put(token, ann(token, query));
 	  return annMap;
   }
-  public static double computeatcatc(HashMap<String, Integer> query, String docName, MangoDB db){
+  
+  
+  
+  public static double smartIDF(String term, MangoDB database, HashMap<String,Integer> invertedIndex) {
+	    double N = (double)database.documentCount();
+	    double n = invertedIndex.containsKey(term) ? invertedIndex.get(term).doubleValue() : 0;
+	    double log = 0;
+	    if(n != 0){
+	    	log = Math.log((N / n));
+	    }
+	    return log;
+  }
+  
+  public static double computeatcatc(HashMap<String, Integer> query, String docName, MangoDB db, HashMap<String,Integer>invertedIndex){
 	  /*
 	   * first triplet atn gives the term weighting of the document vector
 	   * second triplet atn gives the weighting in the query vector
@@ -156,59 +169,33 @@ public class TFIDF {
 	  ArrayList<Double> queryWeights = new ArrayList<Double>();
 	  ArrayList<Double> documentWeights = new ArrayList<Double>();
 	  for (String term : query.keySet()){
-		  if (document.get(term) != null){	// Comment out this check?
-			  double queryWeight = atn(term, query, db);
-			  queryWeights.add(queryWeight);
-			  double docWeight = atn(term, document, db);
-			  documentWeights.add(docWeight);
-//			  sum += queryWeight * docWeight;
+		  
+		  //calculate query tf*idf
+		  double qtf = augmentedTF(term, query);
+		  double idf = smartIDF(term, db, invertedIndex);
+		  queryWeights.add(qtf*idf);
+		  
+		  //if not in document set to 5
+		  if (document.get(term) == null){	
+			  documentWeights.add((0.5 * idf));
+		  } else {
+			  double dtf = augmentedTF(term, document);
+			  documentWeights.add(dtf*idf);	  
 		  }
 	  }
-	  if (queryWeights.size() == 0)
-		  return 0.0;
-//	  System.out.println("Queryweights size: " + queryWeights.size());
-	  double[] normalizedQueryWeights = normalizeWeights(queryWeights);
-	  double[] normalizedDocumentWeights = normalizeWeights(documentWeights);
-//	  System.out.println("Normalized size: " + normalizedQueryWeights.length);
-	  for (int i = 0; i < normalizedQueryWeights.length; i++)
-		  sum += (normalizedQueryWeights[i] * normalizedDocumentWeights[i]);
+	  
+	  
+	  
+////	  System.out.println("Queryweights size: " + queryWeights.size());
+//	  double[] normalizedQueryWeights = normalizeWeights(queryWeights);
+//	  double[] normalizedDocumentWeights = normalizeWeights(documentWeights);
+////	  System.out.println("Normalized size: " + normalizedQueryWeights.length);
+//	  for (int i = 0; i < normalizedQueryWeights.length; i++)
+//		  sum += (normalizedQueryWeights[i] * normalizedDocumentWeights[i]);
+	  for (int i = 0; i < queryWeights.size(); i++)
+		  sum += (queryWeights.get(i) * documentWeights.get(i));
+	  
 	  return sum;
-//	  
-//	  
-//	  
-//	  
-//	  
-//	  
-//	  double maxTfq = maxTF(query);
-//	  double maxTfd = maxTF(document);
-//
-//	  ArrayList<Double> qWeights = new ArrayList<Double>();
-//	  ArrayList<Double> dWeights = new ArrayList<Double>();
-//	  
-//	  for (String term : query.keySet()){
-//		  if (document.get(term) != null){
-//			  double aq = augmentedTF(term, query);
-//			  double ad = augmentedTF(term, document);
-//			  
-//			  double idf = idf(term, db);
-//			  
-//			  qWeights.add(aq * idf);
-//			  dWeights.add(ad * idf);
-//		  }
-//	  }
-//	  
-//	  
-//	  
-//	  Object[] qWeightsArray = qWeights.toArray();
-//	  double[] normalizedQ = normalizeWeights(qWeightsArray);
-//	  Object[] dWeightsArray = dWeights.toArray();
-//	  double[] normalizedD = normalizeWeights(dWeightsArray);
-//	  
-//	  for (int i = 0; i < normalizedQ.length; i++) {
-//		  double prod = normalizedQ[i] * normalizedD[i];
-//		  sum += prod;
-//	  }
-//	  return sum;
   }
   
   //============= Compute Document Values =============

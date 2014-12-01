@@ -142,6 +142,9 @@ public class EvaluateQueries {
 	
 	private static double atnatn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
 		double totalMAP = 0;
+	
+		
+		
 		
 		//loop through queries
 		for(Object key : queryIndex.documents()){
@@ -172,19 +175,41 @@ public class EvaluateQueries {
 	}
 	
 	private static double atcatc(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+		
+		//Create inverted index
+		System.out.print("Creating inverted index");
+		HashMap<String, Integer> invertedIndex = new HashMap<String, Integer>();
+		for(Object docName : docIndex.documents()){
+			System.out.print(".");
+			HashMap<String, Integer>document = docIndex.get(String.valueOf(docName));
+			for(String term : document.keySet()){
+				if(invertedIndex.containsKey(term) ){
+					invertedIndex.put(term, (invertedIndex.get(term) +1)); 
+				} else {
+					invertedIndex.put(term, 1);
+				}
+			}
+		}
+		System.out.print("\n");
+		System.out.print("Done!!\n");
+		
 		double totalMAP = 0;
 		for(Object key : queryIndex.documents()){
-			
+			//get query 
 			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
-			//search for query
+			
+			//Store doc scores in this array
 			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
-				
+			
+			//iterate through documents to create atc scores
 			for(Object docName : docIndex.documents()){		
-				Double atcatcScore = TFIDF.computeatcatc(query, docName.toString(), docIndex);
+				Double atcatcScore = TFIDF.computeatcatc(query, docName.toString(), docIndex, invertedIndex);
 				String fullDocName = docName.toString();
 				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), atcatcScore);
 				queryResults.add(doc);
 			}
+			
+			
 			//sort list of docs by score greatest first
 			Collections.sort(queryResults, new CustomComparator());	
 			

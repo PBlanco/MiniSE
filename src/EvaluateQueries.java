@@ -350,4 +350,25 @@ class ReturnDoc{
     }
 }
 
+class DocumentDistance {
+	private ReturnDoc d1;
+	private ReturnDoc d2;
+	private double distance;
+	
+	public DocumentDistance(ReturnDoc doc1, ReturnDoc doc2, double dist) {
+		d1 = doc1;
+		d2 = doc2;
+		distance = dist;
+	}
+	
+	public ReturnDoc[] documents() {
+		return [d1, d2];
+	}
+	
+}
 
+class CompleteClustering {
+	public static void cluster(ArrayList<ReturnDoc> docs, int k) {
+		
+	}
+}

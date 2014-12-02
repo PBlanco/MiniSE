@@ -1,10 +1,8 @@
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-
 
 public class TFIDF {
   public static String[] pieces(String original) {
@@ -59,7 +57,6 @@ public class TFIDF {
     double maxTF = (double)maxTF(doc);
     return 0.5 + 0.5 * (tf / maxTF);
   }
-  
 
   public static double idf(String term, MangoDB database) {
     double N = (double)database.documentCount();
@@ -75,15 +72,13 @@ public class TFIDF {
     return tf * idf;
   }
 
-  
   public static double smartIDF(String term, MangoDB database, HashMap<String,Integer> invertedIndex) {
 	    double n = invertedIndex.containsKey(term) ? invertedIndex.get(term).doubleValue() : 0;
 	    if (n == 0)
 	    	return 0;
 	    return Math.log10((double)database.documentCount()) - (double)Math.log10(n);
   }
-  
-  
+
   public static ArrayList<Double> computeNorm(ArrayList<Double> list){
 	//get query norm weight
 	  double norm = 0;
@@ -98,7 +93,6 @@ public class TFIDF {
 	  }
 	  
 	  return normalizedList;
-	  
   }
   
 
@@ -113,7 +107,6 @@ public class TFIDF {
 	   */
 	  
 	  HashMap<String, Integer> document = db.tokenFrequenciesForDocument(docName);
-	  
 	  double sum = 0.0;
 	    
 	  /*
@@ -142,15 +135,13 @@ public class TFIDF {
 			  qATN = qtf * idf;
 			  queryWeights.add(qATN);
 		  }
-		  
-		  //if not in document set to 5
 		  if (document.get(term) == null){	
 			  documentWeights.add((0.0 * idf));
 		  } else {
 			  double dtf = augmentedTF(term, document);
 			  double dATN = dtf * idf;
 			  documentWeights.add(dATN);
-//			  sum += qATN * dATN;
+
 		  }
 	  }
 	  
@@ -161,10 +152,9 @@ public class TFIDF {
 	  //take dot products of Query and Document Vector
 	  for (int i = 0; i < normalizedQueryWeights.size(); i++)
 		  sum += (normalizedQueryWeights.get(i).doubleValue() * normalizedDocumentWeights.get(i).doubleValue());
-	  
 	  return sum;
   }
-  
+
   
   // ================== NEW STUFF ===========================
   
@@ -229,8 +219,6 @@ public class TFIDF {
 	  return atcDocIndex;
   }
   
-    
- 
 }
 
 class WeightedIndex extends HashMap<String, HashMap<String, Double>>{}

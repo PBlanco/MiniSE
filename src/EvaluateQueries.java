@@ -10,15 +10,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-
+import java.util.Set;
 
 
 // import lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 
 public class EvaluateQueries {
-	
-	
 	
 	public static void main(String[] args) {
 		String cacmDocsDir = "data/cacm/"; // directory containing CACM documents
@@ -36,7 +34,6 @@ public class EvaluateQueries {
 		int cacmNumResults = 100;
 		int medNumResults = 100;
 
-		
 		//tokenizer 
 		String stopwordFile = "stopwords/stopwords_indri.txt"; //Stop word file
 		CharArraySet stopwords = IndexFiles.makeStopwordSet(stopwordFile);
@@ -45,14 +42,12 @@ public class EvaluateQueries {
 				cacmAnswerFile, cacmNumResults, stopwords);
 		System.out.println("CACM MAP: " + String.valueOf(cacmMAP));
 
-		
 		System.out.println("\n");
 		
 		double medMAP = evaluate(medIndexDir, medDocsDir, medQueryFile,
 				medAnswerFile, medNumResults, stopwords);
 		System.out.println("MED MAP: "+ String.valueOf(medMAP)+"\n");;
 		System.out.println("CACM MAP: " + String.valueOf(cacmMAP));
-		
 	}
 
 	/*================== Load Methods ==================*/
@@ -153,7 +148,6 @@ public class EvaluateQueries {
 	}
 
 	private static double atcatc(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
-		
 		//Create inverted index
 		System.out.print("Creating inverted index");
 		HashMap<String, Integer> invertedIndex = new HashMap<String, Integer>();
@@ -191,20 +185,25 @@ public class EvaluateQueries {
 			//sort list of docs by score greatest first
 			Collections.sort(queryResults, new CustomComparator());	
 			
+			// For Clustering
+			ArrayList<ReturnDoc> top30 = new ArrayList<ReturnDoc>();
+			for (int i = 0; i < 30; i++)
+				top30.add(queryResults.get(i));
+			ArrayList<ReturnDoc> clequalizedTop30 = CompleteClustering.clequalizeDocs(top30, 20);
+			for (int i = 0; i < 30; i++)
+				queryResults.set(i, clequalizedTop30.get(i));
+			
 			//Get query key for answers
 			Integer answersKey = Integer.parseInt(key.toString());
 			//calculate MAP
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
 			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
 			System.out.printf("atc.atc MAP for query "+key.toString() + " is: %1$.2f\n", map);
-			
 			totalMAP += map;
 		}
 		return totalMAP/queryIndex.documents().length;
 	}
-	
-	
-	
+
 	/* =================== Helpers =================== */
 	private static String printDocs(ArrayList<ReturnDoc> docList, int number){
 		int i = 0;
@@ -248,6 +247,146 @@ class ReturnDoc{
     public double getScore() {
         return score;
     }
+    
+    public void setScore(double newScore) {
+    	this.score = newScore;
+    }
 }
 
+class DotProduct {
+	public static double dotProduct(HashMap<String, Double> v1, HashMap<String, Double> v2) {
+		Set<String> keyset1 = v1.keySet();
+		Set<String> keyset2 = v2.keySet();
+		Set<String> commonKeyset = new HashSet<String>();
+		commonKeyset.addAll(keyset1);
+		commonKeyset.retainAll(keyset2);
+		double sum = 0.0;
+		for (String key : commonKeyset)
+			sum += (v1.get(key) * v2.get(key));
+		return sum;
+	}
+}
 
+class ClusterDistance {
+	private Cluster d1;
+	private Cluster d2;
+	private double distance;
+	private int clusterID;
+	
+	public ClusterDistance(Cluster doc1, Cluster doc2, double dist, int cID) {
+		d1 = doc1;
+		d2 = doc2;
+		distance = dist;
+		clusterID = cID;
+	}
+	
+	public Cluster[] clusters() {
+		Cluster[] docs = {d1, d2};
+		return docs;
+	}
+	
+	public Cluster lCluster() {
+		return d1;
+	}
+	
+	public Cluster rCluster() {
+		return d2;
+	}
+	
+	public double distance() {
+		return distance;
+	}
+	
+	public int clusterID() {
+		return clusterID;
+	}
+}
+
+class Cluster {
+	private ArrayList<ReturnDoc> docs;
+	
+	public Cluster() {
+		docs = new ArrayList<ReturnDoc>();
+	}
+	public Cluster(ReturnDoc doc) {
+		docs = new ArrayList<ReturnDoc>();
+		docs.add(doc);
+	}
+	
+	public void addDoc(ReturnDoc d) {
+		docs.add(d);
+	}
+	
+	private void addAllDocs(ArrayList<ReturnDoc> docs) {
+		for (ReturnDoc doc : docs)
+			this.addDoc(doc);
+	}
+	public void mergeWith(Cluster otherCluster) {
+		this.addAllDocs(otherCluster.docs());
+	}
+	
+	public ArrayList<ReturnDoc> docs() {
+		return docs;
+	}
+}
+
+class ClusterDistanceComparator implements Comparator<ClusterDistance> {
+    @Override
+    public int compare(ClusterDistance o1, ClusterDistance o2) {
+    	double a = o1.distance();
+    	double b = o2.distance();
+    	// First distance is largest
+    	int cmp = b < a ? 1 : b > a ? -1 : 0;
+        return  cmp;
+    }
+}
+
+class CompleteClustering {
+	private static double distance(Cluster c1, Cluster c2) {
+		return 1.0;
+	}
+	private static ArrayList<Cluster> cluster(ArrayList<Cluster> clusters, int k) {
+		if (clusters.size() == k)
+			return clusters;
+		
+		ArrayList<ClusterDistance> distances = new ArrayList<ClusterDistance>();
+		for (int i = 0; i < clusters.size(); i++) {
+			for (int j = 0; j < i; j++) {
+				Cluster primaryCluster = clusters.get(i);
+				Cluster otherCluster = clusters.get(j);
+				double clusterDistance = distance(primaryCluster, otherCluster);
+				distances.add(new ClusterDistance(primaryCluster, otherCluster, clusterDistance, j));
+			}
+		}
+		Collections.sort(distances, new ClusterDistanceComparator());
+		ClusterDistance greatestDistance = distances.get(0);
+		Cluster primaryCluster = greatestDistance.lCluster();
+		Cluster otherCluster = greatestDistance.rCluster();
+		
+		primaryCluster.mergeWith(otherCluster);
+		clusters.remove(greatestDistance.clusterID());
+		return cluster(clusters, k);
+	}
+	private static void equalizeCluster(Cluster c) {
+		double maxScore = 0.0;
+		for (ReturnDoc d : c.docs())
+			if (d.getScore() > maxScore)
+				maxScore = d.getScore();
+		
+		for (ReturnDoc d : c.docs())
+			d.setScore(maxScore);
+	}
+	public static ArrayList<ReturnDoc> clequalizeDocs(ArrayList<ReturnDoc> docs, int k) {
+		ArrayList<Cluster> clusters = new ArrayList<Cluster>();
+		for (ReturnDoc doc : docs)
+			clusters.add(new Cluster(doc));
+		ArrayList<Cluster> clusteredClusters = cluster(clusters, k);
+		for (Cluster c : clusteredClusters)
+			equalizeCluster(c);
+		
+		ArrayList<ReturnDoc> clequalizedDocs = new ArrayList<ReturnDoc>();
+		for (Cluster c : clusteredClusters)
+			clequalizedDocs.addAll(c.docs());
+		return clequalizedDocs;
+	}
+}

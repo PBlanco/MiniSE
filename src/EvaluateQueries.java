@@ -233,11 +233,18 @@ class CustomComparator implements Comparator<ReturnDoc> {
 //Doc returned from BM25
 class ReturnDoc{
     private String name;
-    private double score;	
+    private double score;
+    private HashMap<String, Double> atc;
         
     public ReturnDoc(String n, Double bm25Score){
         this.name = n;
         this.score = bm25Score;
+        atc = new HashMap<String, Double>();
+    }
+    public ReturnDoc(String n, Double score, HashMap<String, Double> weights) {
+    	name = n;
+    	this.score = score;
+    	atc = weights;
     }
      
     public String getName() {
@@ -250,6 +257,10 @@ class ReturnDoc{
     
     public void setScore(double newScore) {
     	this.score = newScore;
+    }
+    
+    public HashMap<String, Double> weights() {
+    	return atc;
     }
 }
 
@@ -264,6 +275,9 @@ class DotProduct {
 		for (String key : commonKeyset)
 			sum += (v1.get(key) * v2.get(key));
 		return sum;
+	}
+	public static double dotProduct(ReturnDoc d1, ReturnDoc d2) {
+		return dotProduct(d1.weights(), d2.weights());
 	}
 }
 
@@ -328,6 +342,14 @@ class Cluster {
 	public ArrayList<ReturnDoc> docs() {
 		return docs;
 	}
+	
+	public int size() {
+		return docs.size();
+	}
+	
+	public ReturnDoc get(int index) {
+		return docs.get(index);
+	}
 }
 
 class ClusterDistanceComparator implements Comparator<ClusterDistance> {
@@ -343,7 +365,11 @@ class ClusterDistanceComparator implements Comparator<ClusterDistance> {
 
 class CompleteClustering {
 	private static double distance(Cluster c1, Cluster c2) {
-		return 1.0;
+		ArrayList<Double> dotProducts = new ArrayList<Double>();
+		for (ReturnDoc d1 : c1.docs())
+			for (ReturnDoc d2 : c2.docs())
+				dotProducts.add(DotProduct.dotProduct(d1, d2));
+		return Collections.max(dotProducts);
 	}
 	private static ArrayList<Cluster> cluster(ArrayList<Cluster> clusters, int k) {
 		if (clusters.size() == k)

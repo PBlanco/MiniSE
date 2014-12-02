@@ -59,21 +59,7 @@ public class TFIDF {
     return 0.5 + 0.5 * (tf / maxTF);
   }
   
-  public static int binaryTF(String term, String doc) {
-    String[] pieces = pieces(doc);
-    for (String piece : pieces)
-      if (piece.equals(term))
-        return 1;
-    return 0;
-  }
-  public static int binaryTF(String term, HashMap<String, Integer> doc) {
-    Integer freq = doc.get(term);
-    if (freq == null)
-      return 0;
-    else
-      return 1;
-  }
-  
+
   public static double idf(String term, MangoDB database) {
     double N = (double)database.documentCount();
     double n = (double)database.numberOfDocumentsWithTerm(term);
@@ -87,53 +73,16 @@ public class TFIDF {
     double idf = idf(term, collection);
     return tf * idf;
   }
-  public static double atn(String term, String source, MangoDB collection) {
-    double tf = augmentedTF(term, source);
-    double idf = idf(term, collection);
-    return tf * idf;
-  }
-  public static double ann(String term, HashMap<String, Integer> doc) {
-    return augmentedTF(term, doc);
-  }
-  public static double ann(String term, String source) {
-    return augmentedTF(term, source);
-  }
-  public static double bpn(String term, HashMap<String, Integer> doc, MangoDB collection) {
-    double tf = augmentedTF(term, doc);
-    double N = (double)collection.documentCount();
-    double n = (double)collection.numberOfDocumentsWithTerm(term);
-    double pidf = Math.max(0, Math.log((N - n) / n));
-    return tf * pidf;
-  }
-  public static double bpn(String term, String source, MangoDB collection) {
-    double tf = augmentedTF(term, source);
-    double N = (double)collection.documentCount();
-    double n = (double)collection.numberOfDocumentsWithTerm(term);
-    double pidf = Math.max(0, Math.log((N - n) / n));
-    return tf * pidf;
+
+  
+  public static double smartIDF(String term, MangoDB database, HashMap<String,Integer> invertedIndex) {
+	    double n = invertedIndex.containsKey(term) ? invertedIndex.get(term).doubleValue() : 0;
+	    if (n == 0)
+	    	return 0;
+	    return Math.log10((double)database.documentCount()) - (double)Math.log10(n);
   }
   
-  // https://piazza.com/class/hz0gtmi8y6v6eo?cid=253
-  public static double[] normalizeWeights(ArrayList<Double> weights) {
-    double denomInner = 0;
-    for (Double num : weights)
-      denomInner += Math.pow(num.doubleValue(), 2);
-    double denom = Math.sqrt(denomInner);
-    double normFactor = 1.0 / denom;
-    double[] mapped = new double[weights.size()];
-    for (int i = 0; i < weights.size(); i++)
-      mapped[i] = (weights.get(i).doubleValue()) * normFactor;
-    return mapped;
-  }
-  
-  // ============ Compute Query Values =================
-  public static HashMap<String, Double> computeAnn(HashMap<String, Integer> query){
-	  HashMap<String, Double> annMap = new HashMap<String, Double>(); 
-	  for (String token : query.keySet())
-		  annMap.put(token, ann(token, query));
-	  return annMap;
-  }
-  
+<<<<<<< HEAD
   public static double smartIDF(String term, MangoDB database, HashMap<String,Integer> invertedIndex) {
 	    double N = (double)database.documentCount();
 	    double n = invertedIndex.containsKey(term) ? invertedIndex.get(term).doubleValue() : 0;
@@ -142,6 +91,24 @@ public class TFIDF {
 	    	log = Math.log((N / n));
 	    }
 	    return log;
+=======
+  
+  public static ArrayList<Double> computeNorm(ArrayList<Double> list){
+	//get query norm weight
+	  double norm = 0;
+	  for (double weight : list){
+		  norm += Math.pow(weight, 2);
+	  }
+	  norm = (double)Math.sqrt(norm);
+	  
+	  ArrayList<Double> normalizedList = new ArrayList<Double>();
+	  for (double weight : list){ 
+		  normalizedList.add(weight/norm);
+	  }
+	  
+	  return normalizedList;
+	  
+>>>>>>> 7b42be4ac327b70417c63a6d68d14fa34642fc8c
   }
   
   public static double computeatcatc(HashMap<String, Integer> query, String docName, MangoDB db, HashMap<String,Integer>invertedIndex){
@@ -170,6 +137,10 @@ public class TFIDF {
 	  allTerms.putAll(document);
 	  
 	  for (String term : allTerms.keySet()) {
+<<<<<<< HEAD
+=======
+		  //calculate query tf*idf
+>>>>>>> 7b42be4ac327b70417c63a6d68d14fa34642fc8c
 		  double idf = smartIDF(term, db, invertedIndex);
 		  double qATN;
 		  if (query.get(term) == null) {
@@ -181,12 +152,18 @@ public class TFIDF {
 			  qATN = qtf * idf;
 			  queryWeights.add(qATN);
 		  }
+<<<<<<< HEAD
+=======
+		  
+		  //if not in document set to 5
+>>>>>>> 7b42be4ac327b70417c63a6d68d14fa34642fc8c
 		  if (document.get(term) == null){	
 			  documentWeights.add((0.0 * idf));
 		  } else {
 			  double dtf = augmentedTF(term, document);
 			  double dATN = dtf * idf;
 			  documentWeights.add(dATN);
+<<<<<<< HEAD
 		  }
 	  }
 
@@ -216,25 +193,24 @@ public class TFIDF {
 			  sum += tq * bpn;
 		  }
 	  }
+=======
+//			  sum += qATN * dATN;
+		  }
+	  }
+	  
+	  //compute normalized weighted vectors
+	  ArrayList<Double> normalizedQueryWeights = computeNorm(queryWeights);
+	  ArrayList<Double> normalizedDocumentWeights = computeNorm(documentWeights);
+	  
+	  //take dot products of Query and Document Vector
+	  for (int i = 0; i < normalizedQueryWeights.size(); i++)
+		  sum += (normalizedQueryWeights.get(i).doubleValue() * normalizedDocumentWeights.get(i).doubleValue());
+	  
+>>>>>>> 7b42be4ac327b70417c63a6d68d14fa34642fc8c
 	  return sum;
   }
-  
-  public static double computeAtnatn(HashMap<String, Integer> query, String docName, MangoDB db){
-	  /*
-	   * first triplet atn gives the term weighting of the document vector
-	   * second triplet atn gives the weighting in the query vector
-	   * a -> tf component of the weighting
-	   * t -> df component of the weighting
-	   * n -> form of normalization used
-	   */
-	  //get document
-	  HashMap<String, Integer> document = db.tokenFrequenciesForDocument(docName); 
-	  
-	  double sum = 0.0;
-	  
-	  double maxTfq = maxTF(query);
-	  double maxTfd = maxTF(document);
 
+<<<<<<< HEAD
 	  for (String term : query.keySet()){
 		  if (document.get(term) != null){
 			  sum += at(term, query, db) * at(term, document, db);
@@ -243,5 +219,7 @@ public class TFIDF {
 	  return sum;
   }
   
+=======
+>>>>>>> 7b42be4ac327b70417c63a6d68d14fa34642fc8c
 }
 

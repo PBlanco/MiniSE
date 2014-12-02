@@ -47,6 +47,7 @@ public class EvaluateQueries {
 		System.out.println("CACM MAP: " + String.valueOf(cacmMAP));
 	}
 
+	/*================== Load Methods ==================*/
 	private static Map<Integer, String> loadQueries(String filename) {
 		HashMap<Integer, String> queryIdMap = new HashMap<Integer, String>();
 		BufferedReader in = null;
@@ -104,65 +105,44 @@ public class EvaluateQueries {
 		return queryAnswerMap;
 	}
 	
-	private static double bm25(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
-		double totalMAP = 0;
-		for(Object key : queryIndex.documents()){
-			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
-			//search for query
-			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
+	
+	/* ================= Calculations =================*/
+	private static double evaluate(String indexDir, String docsDir,
+			String queryFile, String answerFile, int numResults,
+			CharArraySet stopwords) {
 
-			//Create list of documents
-			for(Object docName : docIndex.documents()){
-				//calculate bm25
-				Double bm25Score = BM25Similarity.computeBM25Similarity(query, docName.toString(), docIndex);
-				String fullDocName = docName.toString();
-				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), bm25Score);
-				queryResults.add(doc);
-			}
-			//sort list of docs by score greatest first
-			Collections.sort(queryResults, new CustomComparator());	
+		// Build Index
+		MangoDB docIndex = new MangoDB();
+		IndexFiles.buildIndex(indexDir, docsDir, stopwords, docIndex);
 
-			//Get query key for answers
-			Integer answersKey = Integer.parseInt(key.toString());
-			//calculate MAP
-			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
-			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("BM25 MAP for query "+key.toString() + " is: %1$.2f\n", map);
-			totalMAP += map;
-		}
-		return totalMAP/queryIndex.documents().length;
+
+		// load queries and answer
+		Map<Integer, String> queries = loadQueries(queryFile);
+		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
+		MangoDB queryIndex = new MangoDB();
+		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
+				
+		return atcatc(queryIndex, docIndex, queryAnswers, numResults);
+
 	}
 	
-	private static double atnatn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
-		double totalMAP = 0;
-		//loop through queries
-		for(Object key : queryIndex.documents()){
-			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
-			
-			//create list to store score results
-			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
-
-			//loop through documents
-			for(Object docName : docIndex.documents()){		
-				Double atnatnScore = TFIDF.computeAtnatn(query, docName.toString(), docIndex);
-				String fullDocName = docName.toString();
-				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), atnatnScore);
-				queryResults.add(doc);
+	private static double meanAverageprecision(HashSet<String> answers, ArrayList<ReturnDoc> results) {
+		double avp = 0;
+		double matches = 0;
+		double docs = 0;
+		for (ReturnDoc result : results) {
+			docs++;
+			if (answers.contains(result.getName())){
+				matches++;
+				avp+= matches/docs;
 			}
-			//sort list of docs by score greatest first
-			Collections.sort(queryResults, new CustomComparator());	
-
-			//Get query key for answers
-			Integer answersKey = Integer.parseInt(key.toString());
-			//calculate MAP
-			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
-			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("atn.atn MAP for query "+key.toString() + " is: %1$.2f\n", map);
-			totalMAP += map;
+			if(docs == 100)
+				break;
 		}
-		return totalMAP/queryIndex.documents().length;
+
+		return avp/answers.size();
 	}
-	
+
 	private static double atcatc(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
 		//Create inverted index
 		System.out.print("Creating inverted index");
@@ -201,6 +181,14 @@ public class EvaluateQueries {
 			//sort list of docs by score greatest first
 			Collections.sort(queryResults, new CustomComparator());	
 			
+			// For Clustering
+			ArrayList<ReturnDoc> top30 = new ArrayList<ReturnDoc>();
+			for (int i = 0; i < 30; i++)
+				top30.add(queryResults.get(i));
+			ArrayList<ReturnDoc> clequalizedTop30 = CompleteClustering.clequalizeDocs(top30, 20);
+			for (int i = 0; i < 30; i++)
+				queryResults.set(i, clequalizedTop30.get(i));
+			
 			//Get query key for answers
 			Integer answersKey = Integer.parseInt(key.toString());
 			//calculate MAP
@@ -211,80 +199,8 @@ public class EvaluateQueries {
 		}
 		return totalMAP/queryIndex.documents().length;
 	}
-	
-	private static double annbpn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
-		double totalMAP = 0;
-		
-		//Create inverted index
-		System.out.print("Creating inverted index");
-		HashMap<String, Integer> invertedIndex = new HashMap<String, Integer>();
-		for(Object docName : docIndex.documents()){
-			System.out.print(".");
-			HashMap<String, Integer>document = docIndex.get(String.valueOf(docName));
-			for(String term : document.keySet()){
-				if(invertedIndex.containsKey(term) ){
-					invertedIndex.put(term, (invertedIndex.get(term) +1)); 
-				} else {
-					invertedIndex.put(term, 1);
-				}
-			}
-		}
-		System.out.print("\n");
-		System.out.print("Done!!\n");
-		int docCount = 0;
-		for(Object key : queryIndex.documents()){
-			
-			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
-			//search for query
-			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
-			
-			//Create list of documents
-			
-			//compute ann
-			HashMap<String, Double> queryAnnMap = TFIDF.computeAnn(query);
-		
-			
-			for(Object docName : docIndex.documents()){		
-				
-				Double annBpnScore = TFIDF.computeAnnBpn(queryAnnMap, docName.toString(), docIndex, invertedIndex);
-				String fullDocName = docName.toString();
-				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), annBpnScore);
-				queryResults.add(doc);
-			}
-			//sort list of docs by score greatest first
-			Collections.sort(queryResults, new CustomComparator());	
-			
-			//Get query key for answers
-			Integer answersKey = Integer.parseInt(key.toString());
-			//calculate MAP
-			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
-			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("ann.bpn MAP for query "+key.toString() + " is: %1$.2f\n", map);
-			totalMAP += map;
-		}
-		return totalMAP/queryIndex.documents().length;
-	}
-	
-	
-	private static double meanAverageprecision(HashSet<String> answers, ArrayList<ReturnDoc> results) {
-		double avp = 0;
-		double matches = 0;
-		double docs = 0;
-		System.out.println("=== Results count: " + results.size());
-		for (ReturnDoc result : results) {
-			docs++;
-			if (answers.contains(result.getName())){
-				matches++;
-				avp+= matches/docs;
-			}
-			if(docs == 100)
-				break;
-		}
-		System.out.println("Matches: " + matches);
 
-		return avp/answers.size();
-	}
-	
+	/* =================== Helpers =================== */
 	private static String printDocs(ArrayList<ReturnDoc> docList, int number){
 		int i = 0;
 		String ret = "[";
@@ -298,27 +214,6 @@ public class EvaluateQueries {
 		return ret;
 	}
 	
-	private static double evaluate(String indexDir, String docsDir,
-			String queryFile, String answerFile, int numResults,
-			CharArraySet stopwords) {
-
-		// Build Index
-		MangoDB docIndex = new MangoDB();
-		IndexFiles.buildIndex(indexDir, docsDir, stopwords, docIndex);
-
-
-		// load queries and answer
-		Map<Integer, String> queries = loadQueries(queryFile);
-		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
-		MangoDB queryIndex = new MangoDB();
-		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
-		
-		//============ Uncomment the one you want to run =====================
-		//return annbpn(queryIndex, docIndex, queryAnswers, numResults);		
-		return atcatc(queryIndex, docIndex, queryAnswers, numResults);
-		//return atnatn(queryIndex, docIndex, queryAnswers, numResults);
-		//return bm25(queryIndex, docIndex, queryAnswers, numResults);
-	}
 }
 
 class CustomComparator implements Comparator<ReturnDoc> {
@@ -348,27 +243,132 @@ class ReturnDoc{
     public double getScore() {
         return score;
     }
+    
+    public void setScore(double newScore) {
+    	this.score = newScore;
+    }
 }
 
-class DocumentDistance {
-	private ReturnDoc d1;
-	private ReturnDoc d2;
+class ClusterDistance {
+	private Cluster d1;
+	private Cluster d2;
 	private double distance;
+	private int clusterID;
 	
-	public DocumentDistance(ReturnDoc doc1, ReturnDoc doc2, double dist) {
+	public ClusterDistance(Cluster doc1, Cluster doc2, double dist, int cID) {
 		d1 = doc1;
 		d2 = doc2;
 		distance = dist;
+		clusterID = cID;
 	}
 	
-	public ReturnDoc[] documents() {
-		return [d1, d2];
+	public Cluster[] clusters() {
+		Cluster[] docs = {d1, d2};
+		return docs;
 	}
 	
+	public Cluster lCluster() {
+		return d1;
+	}
+	
+	public Cluster rCluster() {
+		return d2;
+	}
+	
+	public double distance() {
+		return distance;
+	}
+	
+	public int clusterID() {
+		return clusterID;
+	}
+}
+
+class Cluster {
+	private ArrayList<ReturnDoc> docs;
+	
+	public Cluster() {
+		docs = new ArrayList<ReturnDoc>();
+	}
+	public Cluster(ReturnDoc doc) {
+		docs = new ArrayList<ReturnDoc>();
+		docs.add(doc);
+	}
+	
+	public void addDoc(ReturnDoc d) {
+		docs.add(d);
+	}
+	
+	private void addAllDocs(ArrayList<ReturnDoc> docs) {
+		for (ReturnDoc doc : docs)
+			this.addDoc(doc);
+	}
+	public void mergeWith(Cluster otherCluster) {
+		this.addAllDocs(otherCluster.docs());
+	}
+	
+	public ArrayList<ReturnDoc> docs() {
+		return docs;
+	}
+}
+
+class ClusterDistanceComparator implements Comparator<ClusterDistance> {
+    @Override
+    public int compare(ClusterDistance o1, ClusterDistance o2) {
+    	double a = o1.distance();
+    	double b = o2.distance();
+    	// First distance is largest
+    	int cmp = b < a ? 1 : b > a ? -1 : 0;
+        return  cmp;
+    }
 }
 
 class CompleteClustering {
-	public static void cluster(ArrayList<ReturnDoc> docs, int k) {
+	private static double distance(Cluster c1, Cluster c2) {
+		return 1.0;
+	}
+	private static ArrayList<Cluster> cluster(ArrayList<Cluster> clusters, int k) {
+		if (clusters.size() == k)
+			return clusters;
 		
+		ArrayList<ClusterDistance> distances = new ArrayList<ClusterDistance>();
+		for (int i = 0; i < clusters.size(); i++) {
+			for (int j = 0; j < i; j++) {
+				Cluster primaryCluster = clusters.get(i);
+				Cluster otherCluster = clusters.get(j);
+				double clusterDistance = distance(primaryCluster, otherCluster);
+				distances.add(new ClusterDistance(primaryCluster, otherCluster, clusterDistance, j));
+			}
+		}
+		Collections.sort(distances, new ClusterDistanceComparator());
+		ClusterDistance greatestDistance = distances.get(0);
+		Cluster primaryCluster = greatestDistance.lCluster();
+		Cluster otherCluster = greatestDistance.rCluster();
+		
+		primaryCluster.mergeWith(otherCluster);
+		clusters.remove(greatestDistance.clusterID());
+		return cluster(clusters, k);
+	}
+	private static void equalizeCluster(Cluster c) {
+		double maxScore = 0.0;
+		for (ReturnDoc d : c.docs())
+			if (d.getScore() > maxScore)
+				maxScore = d.getScore();
+		
+		for (ReturnDoc d : c.docs())
+			d.setScore(maxScore);
+	}
+	public static ArrayList<ReturnDoc> clequalizeDocs(ArrayList<ReturnDoc> docs, int k) {
+		ArrayList<Cluster> clusters = new ArrayList<Cluster>();
+		for (ReturnDoc doc : docs)
+			clusters.add(new Cluster(doc));
+		ArrayList<Cluster> clusteredClusters = cluster(clusters, k);
+		for (Cluster c : clusteredClusters)
+			equalizeCluster(c);
+		
+		ArrayList<ReturnDoc> clequalizedDocs = new ArrayList<ReturnDoc>();
+		for (Cluster c : clusteredClusters)
+			clequalizedDocs.addAll(c.docs());
+		return clequalizedDocs;
 	}
 }

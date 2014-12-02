@@ -177,12 +177,12 @@ public class TFIDF {
 		  return document;
 	  }
   
-  public static WeightedIndex computeatcWeights(MangoDB docIndex){
+  public static HashMap<String, Integer> invertIndex(MangoDB index){
 	//Create inverted index
 	  System.out.println("Creating inverted index");
 	  HashMap<String, Integer> invertedIndex = new HashMap<String, Integer>();
-	  for(Object docName : docIndex.documents()){
-		  HashMap<String, Integer>document = docIndex.get(String.valueOf(docName));
+	  for(Object docName : index.documents()){
+		  HashMap<String, Integer>document = index.get(String.valueOf(docName));
 		  for(String term : document.keySet()){
 			  if(invertedIndex.containsKey(term) ){
 				  invertedIndex.put(term, (invertedIndex.get(term) +1)); 
@@ -191,7 +191,12 @@ public class TFIDF {
 			  }
 		  }
 	  }
-	  System.out.println("Done!!");
+	  return invertedIndex;
+  }
+  public static WeightedIndex computeatcWeights(MangoDB docIndex){
+	//Create inverted index
+	  System.out.println("Creating inverted index");
+	  HashMap<String, Integer> invertedIndex = invertIndex(docIndex);
 	  
 	  System.out.println("Computing weights");
 	  //created weighted hashmap with double value
@@ -217,6 +222,31 @@ public class TFIDF {
 	  System.out.println("Done computing weights");
 
 	  return atcDocIndex;
+  }
+  
+  public static WeightedIndex computeQueryAtcWeights(MangoDB queryIndex, MangoDB docIndex){
+	  HashMap<String, Integer> invertedIndex = invertIndex(docIndex);
+	  
+	  WeightedIndex atcQueryIndex = new WeightedIndex();
+	  //iterate through all queries
+	  for(Object name : queryIndex.documents()){
+		  //get query and create new weighted query with double
+		  HashMap<String, Integer> query = queryIndex.get((String) name);
+		  HashMap<String, Double> weightedQuery = new HashMap<String, Double>();
+		  
+		  //iterate through all terms to calculate weights
+		  for(String term : query.keySet()){
+			  double idf = smartIDF(term, docIndex, invertedIndex);
+			  double qtf = augmentedTF(term, query);
+			  weightedQuery.put(term, qtf * idf);
+		  }
+		  
+		  //add weight to the atc query index
+		  atcQueryIndex.put((String)name, normalize(weightedQuery));
+	  }
+	  System.out.println("Done computing weights");
+
+	  return atcQueryIndex;  
   }
   
 }

@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -81,18 +82,7 @@ public class TFIDF {
 	    	return 0;
 	    return Math.log10((double)database.documentCount()) - (double)Math.log10(n);
   }
-  
-<<<<<<< HEAD
-  public static double smartIDF(String term, MangoDB database, HashMap<String,Integer> invertedIndex) {
-	    double N = (double)database.documentCount();
-	    double n = invertedIndex.containsKey(term) ? invertedIndex.get(term).doubleValue() : 0;
-	    double log = 0;
-	    if(n != 0){
-	    	log = Math.log((N / n));
-	    }
-	    return log;
-=======
-  
+
   public static ArrayList<Double> computeNorm(ArrayList<Double> list){
 	//get query norm weight
 	  double norm = 0;
@@ -107,8 +97,6 @@ public class TFIDF {
 	  }
 	  
 	  return normalizedList;
-	  
->>>>>>> 7b42be4ac327b70417c63a6d68d14fa34642fc8c
   }
   
   public static double computeatcatc(HashMap<String, Integer> query, String docName, MangoDB db, HashMap<String,Integer>invertedIndex){
@@ -137,10 +125,7 @@ public class TFIDF {
 	  allTerms.putAll(document);
 	  
 	  for (String term : allTerms.keySet()) {
-<<<<<<< HEAD
-=======
 		  //calculate query tf*idf
->>>>>>> 7b42be4ac327b70417c63a6d68d14fa34642fc8c
 		  double idf = smartIDF(term, db, invertedIndex);
 		  double qATN;
 		  if (query.get(term) == null) {
@@ -152,48 +137,107 @@ public class TFIDF {
 			  qATN = qtf * idf;
 			  queryWeights.add(qATN);
 		  }
-<<<<<<< HEAD
-=======
-		  
-		  //if not in document set to 5
->>>>>>> 7b42be4ac327b70417c63a6d68d14fa34642fc8c
 		  if (document.get(term) == null){	
 			  documentWeights.add((0.0 * idf));
 		  } else {
 			  double dtf = augmentedTF(term, document);
 			  double dATN = dtf * idf;
 			  documentWeights.add(dATN);
-<<<<<<< HEAD
+
 		  }
 	  }
-
-	  double[] normalizedQueryWeights = normalizeWeights(queryWeights);
-	  double[] normalizedDocumentWeights = normalizeWeights(documentWeights);
-	  for (int i = 0; i < normalizedQueryWeights.length; i++)
-		  sum += (normalizedQueryWeights[i] * normalizedDocumentWeights[i]);
 	  
+	  //compute normalized weighted vectors
+	  ArrayList<Double> normalizedQueryWeights = computeNorm(queryWeights);
+	  ArrayList<Double> normalizedDocumentWeights = computeNorm(documentWeights);
+	  
+	  //take dot products of Query and Document Vector
+	  for (int i = 0; i < normalizedQueryWeights.size(); i++)
+		  sum += (normalizedQueryWeights.get(i).doubleValue() * normalizedDocumentWeights.get(i).doubleValue());
 	  return sum;
   }
   
-  //============= Compute Document Values =============
-//run through doc terms and if the oken is in queyr compute bpn
-  public static double computeAnnBpn(HashMap<String, Double> queryAnnMap, String docName, MangoDB db, HashMap<String, Integer> invertedIndex){
-	  HashMap<String, Integer> document = db.tokenFrequenciesForDocument(docName);
-	  double N = db.documents().length;
-	  double sum = 0.0;
-	  
-	  for (String term : queryAnnMap.keySet()){
-		  if(document.get(term) != null){
-			  double n = invertedIndex.containsKey(term) ? invertedIndex.get(term).doubleValue() : 0;
-			  double tf = augmentedTF(term, document);
-			  double pidf = Math.max(0, Math.log((N - n) / n));
-			  double b = termFrequency(term, document) > 0 ? 1 : 0;
-			  double bpn = tf * b *pidf;
-			  double tq = queryAnnMap.get(term);
-			  sum += tq * bpn;
+  public static HashMap<String, HashMap<String, Double>> computeAtcatcWeights(MangoDB docIndex){
+	//Create inverted index
+	  System.out.println("Creating inverted index");
+	  HashMap<String, Integer> invertedIndex = new HashMap<String, Integer>();
+	  for(Object docName : docIndex.documents()){
+		  HashMap<String, Integer>document = docIndex.get(String.valueOf(docName));
+		  for(String term : document.keySet()){
+			  if(invertedIndex.containsKey(term) ){
+				  invertedIndex.put(term, (invertedIndex.get(term) +1)); 
+			  } else {
+				  invertedIndex.put(term, 1);
+			  }
 		  }
 	  }
-=======
+	  System.out.println("Done!!");
+	  
+	  System.out.println("Computing weights");
+	  //created weighted hashmap with double value
+	  HashMap<String, HashMap<String, Double>> atcDocIndex = new HashMap<String, HashMap<String, Double>>();
+
+	  //iterate through all docs
+	  for(Object docname : docIndex.documents()){
+		  //get doc and create new weighted doc with double
+		  HashMap<String, Integer> document = docIndex.get((String) docname);
+		  HashMap<String, Double> weightedDocument = new HashMap<String, Double>();
+		  
+		  //iterate through all terms to calculate weights
+		  for(String term : document.keySet()){
+			  double idf = smartIDF(term, docIndex, invertedIndex);
+			  double dtf = augmentedTF(term, document);
+			  weightedDocument.put(term, dtf * idf);
+		  }
+		  
+		  //add weight to the atc doc index
+		  atcDocIndex.put((String)docname, weightedDocument);
+	  }
+	  System.out.println("Done computing weights");
+
+	  return atcDocIndex;
+  }
+  
+  public static double atcatc(HashMap<String, Integer> query, String docName, MangoDB db, HashMap<String,Integer>invertedIndex){
+	  /*
+	   * first triplet atn gives the term weighting of the document vector
+	   * second triplet atn gives the weighting in the query vector
+	   * a -> tf component of the weighting
+	   * t -> df component of the weighting
+	   * c -> form of normalization used
+	   */
+	  
+	  HashMap<String, Integer> document = db.tokenFrequenciesForDocument(docName);
+	  
+	  double sum = 0.0;
+	  
+	  ArrayList<Double> queryWeights = new ArrayList<Double>();
+	  ArrayList<Double> documentWeights = new ArrayList<Double>();
+	  
+	  HashMap<String, Integer> allTerms = new HashMap<String, Integer>(query);
+	  allTerms.putAll(document);
+	  
+	  for (String term : allTerms.keySet()) {
+		  //calculate query tf*idf
+		  double idf = smartIDF(term, db, invertedIndex);
+		  double qATN;
+		  if (query.get(term) == null) {
+			  qATN = 0.0 * idf;
+			  queryWeights.add(qATN);
+		  }
+		  else {
+			  double qtf = augmentedTF(term, query);
+			  qATN = qtf * idf;
+			  queryWeights.add(qATN);
+		  }
+		  
+		  //if not in document set to 5
+		  if (document.get(term) == null){	
+			  documentWeights.add((0.0 * idf));
+		  } else {
+			  double dtf = augmentedTF(term, document);
+			  double dATN = dtf * idf;
+			  documentWeights.add(dATN);
 //			  sum += qATN * dATN;
 		  }
 	  }
@@ -206,20 +250,7 @@ public class TFIDF {
 	  for (int i = 0; i < normalizedQueryWeights.size(); i++)
 		  sum += (normalizedQueryWeights.get(i).doubleValue() * normalizedDocumentWeights.get(i).doubleValue());
 	  
->>>>>>> 7b42be4ac327b70417c63a6d68d14fa34642fc8c
 	  return sum;
   }
-
-<<<<<<< HEAD
-	  for (String term : query.keySet()){
-		  if (document.get(term) != null){
-			  sum += at(term, query, db) * at(term, document, db);
-		  }
-	  }
-	  return sum;
-  }
-  
-=======
->>>>>>> 7b42be4ac327b70417c63a6d68d14fa34642fc8c
 }
 

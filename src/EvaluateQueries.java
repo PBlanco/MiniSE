@@ -121,9 +121,10 @@ public class EvaluateQueries {
 		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
 		MangoDB queryIndex = new MangoDB();
 		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
-				
-		return atcatc(queryIndex, docIndex, queryAnswers, numResults);
-
+			
+		TFIDF.computeAtcatcWeights(docIndex);
+		//return atcatc(queryIndex, docIndex, queryAnswers, numResults);
+		return 0;
 	}
 	
 	private static double meanAverageprecision(HashSet<String> answers, ArrayList<ReturnDoc> results) {

@@ -54,6 +54,7 @@ public class EvaluateQueries {
 		
 	}
 
+	/*================== Load Methods ==================*/
 	private static Map<Integer, String> loadQueries(String filename) {
 		HashMap<Integer, String> queryIdMap = new HashMap<Integer, String>();
 		BufferedReader in = null;
@@ -110,7 +111,44 @@ public class EvaluateQueries {
 		}
 		return queryAnswerMap;
 	}
+	
+	
+	/* ================= Calculations =================*/
+	private static double evaluate(String indexDir, String docsDir,
+			String queryFile, String answerFile, int numResults,
+			CharArraySet stopwords) {
 
+		// Build Index
+		MangoDB docIndex = new MangoDB();
+		IndexFiles.buildIndex(indexDir, docsDir, stopwords, docIndex);
+
+
+		// load queries and answer
+		Map<Integer, String> queries = loadQueries(queryFile);
+		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
+		MangoDB queryIndex = new MangoDB();
+		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
+				
+		return atcatc(queryIndex, docIndex, queryAnswers, numResults);
+
+	}
+	
+	private static double meanAverageprecision(HashSet<String> answers, ArrayList<ReturnDoc> results) {
+		double avp = 0;
+		double matches = 0;
+		double docs = 0;
+		for (ReturnDoc result : results) {
+			docs++;
+			if (answers.contains(result.getName())){
+				matches++;
+				avp+= matches/docs;
+			}
+			if(docs == 100)
+				break;
+		}
+
+		return avp/answers.size();
+	}
 
 	private static double atcatc(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
 		
@@ -163,26 +201,7 @@ public class EvaluateQueries {
 		return totalMAP/queryIndex.documents().length;
 	}
 	
-
-	
-	
-	private static double meanAverageprecision(HashSet<String> answers, ArrayList<ReturnDoc> results) {
-		double avp = 0;
-		double matches = 0;
-		double docs = 0;
-		for (ReturnDoc result : results) {
-			docs++;
-			if (answers.contains(result.getName())){
-				matches++;
-				avp+= matches/docs;
-			}
-			if(docs == 100)
-				break;
-		}
-
-		return avp/answers.size();
-	}
-	
+	/* =================== Helpers =================== */
 	private static String printDocs(ArrayList<ReturnDoc> docList, int number){
 		int i = 0;
 		String ret = "[";
@@ -196,27 +215,6 @@ public class EvaluateQueries {
 		return ret;
 	}
 	
-	private static double evaluate(String indexDir, String docsDir,
-			String queryFile, String answerFile, int numResults,
-			CharArraySet stopwords) {
-
-		// Build Index
-		MangoDB docIndex = new MangoDB();
-		IndexFiles.buildIndex(indexDir, docsDir, stopwords, docIndex);
-
-
-		// load queries and answer
-		Map<Integer, String> queries = loadQueries(queryFile);
-		Map<Integer, HashSet<String>> queryAnswers = loadAnswers(answerFile);
-		MangoDB queryIndex = new MangoDB();
-		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
-		
-		//============ Uncomment the one you want to run =====================
-		//return annbpn(queryIndex, docIndex, queryAnswers, numResults);		
-		return atcatc(queryIndex, docIndex, queryAnswers, numResults);
-		//return atnatn(queryIndex, docIndex, queryAnswers, numResults);
-		//return bm25(queryIndex, docIndex, queryAnswers, numResults);
-	}
 }
 
 class CustomComparator implements Comparator<ReturnDoc> {

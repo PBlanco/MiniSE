@@ -59,21 +59,7 @@ public class TFIDF {
     return 0.5 + 0.5 * (tf / maxTF);
   }
   
-  public static int binaryTF(String term, String doc) {
-    String[] pieces = pieces(doc);
-    for (String piece : pieces)
-      if (piece.equals(term))
-        return 1;
-    return 0;
-  }
-  public static int binaryTF(String term, HashMap<String, Integer> doc) {
-    Integer freq = doc.get(term);
-    if (freq == null)
-      return 0;
-    else
-      return 1;
-  }
-  
+
   public static double idf(String term, MangoDB database) {
     double N = (double)database.documentCount();
     double n = (double)database.numberOfDocumentsWithTerm(term);
@@ -87,54 +73,7 @@ public class TFIDF {
     double idf = idf(term, collection);
     return tf * idf;
   }
-  public static double atn(String term, String source, MangoDB collection) {
-    double tf = augmentedTF(term, source);
-    double idf = idf(term, collection);
-    return tf * idf;
-  }
-  public static double ann(String term, HashMap<String, Integer> doc) {
-    return augmentedTF(term, doc);
-  }
-  public static double ann(String term, String source) {
-    return augmentedTF(term, source);
-  }
-  public static double bpn(String term, HashMap<String, Integer> doc, MangoDB collection) {
-    double tf = augmentedTF(term, doc);
-    double N = (double)collection.documentCount();
-    double n = (double)collection.numberOfDocumentsWithTerm(term);
-    double pidf = Math.max(0, Math.log((N - n) / n));
-    return tf * pidf;
-  }
-  public static double bpn(String term, String source, MangoDB collection) {
-    double tf = augmentedTF(term, source);
-    double N = (double)collection.documentCount();
-    double n = (double)collection.numberOfDocumentsWithTerm(term);
-    double pidf = Math.max(0, Math.log((N - n) / n));
-    return tf * pidf;
-  }
-  
-  // https://piazza.com/class/hz0gtmi8y6v6eo?cid=253
-  public static double[] normalizeWeights(ArrayList<Double> weights) {
-    double denomInner = 0;
-    for (Double num : weights)
-      denomInner += Math.pow(num.doubleValue(), 2);
-    double denom = Math.sqrt(denomInner);
-    double normFactor = 1.0 / denom;
-    double[] mapped = new double[weights.size()];
-    for (int i = 0; i < weights.size(); i++)
-      mapped[i] = (weights.get(i).doubleValue()) * normFactor;
-    return mapped;
-  }
-  
-  // ============ Compute Query Values =================
-  public static HashMap<String, Double> computeAnn(HashMap<String, Integer> query){
-	  HashMap<String, Double> annMap = new HashMap<String, Double>(); 
-	  for (String token : query.keySet())
-		  annMap.put(token, ann(token, query));
-	  return annMap;
-  }
-  
-  
+
   
   public static double smartIDF(String term, MangoDB database, HashMap<String,Integer> invertedIndex) {
 	    double n = invertedIndex.containsKey(term) ? invertedIndex.get(term).doubleValue() : 0;
@@ -222,59 +161,6 @@ public class TFIDF {
 	  
 	  return sum;
   }
-  
-  //============= Compute Document Values =============
-//run through doc terms and if the oken is in queyr compute bpn
-  public static double computeAnnBpn(HashMap<String, Double> queryAnnMap, String docName, MangoDB db){
-	  HashMap<String, Integer> document = db.tokenFrequenciesForDocument(docName);
-	  double N = db.documents().length;
-	  double sum = 0.0;
-	  
-	  for (String term : queryAnnMap.keySet()){
-		  if(document.get(term) != null){
-			  double n = (double)db.numberOfDocumentsWithTerm(term); 
-			  double tf = augmentedTF(term, document);
-			  double pidf = Math.max(0, Math.log((N - n) / n));
-			  double b = termFrequency(term, document) > 0 ? 1 : 0;
-			  double bpn = tf * b *pidf;
-			  double tq = queryAnnMap.get(term);
-			  sum += tq * bpn;
-		  }
-	  }
-	  return sum;
-  }
-  
-  public static double computeAtnatn(HashMap<String, Integer> query, String docName, MangoDB db){
-	  /*
-	   * first triplet atn gives the term weighting of the document vector
-	   * second triplet atn gives the weighting in the query vector
-	   * a -> tf component of the weighting
-	   * t -> df component of the weighting
-	   * n -> form of normalization used
-	   */
-	  //get document
-	  HashMap<String, Integer> document = db.tokenFrequenciesForDocument(docName); 
-	  
-	  double sum = 0.0;
-	  
-	  double maxTfq = maxTF(query);
-	  double maxTfd = maxTF(document);
 
-	  for (String term : query.keySet()){
-		  if (document.get(term) != null){
-//			  double tfq = query.get(term);
-//			  double tfd = document.get(term);
-//			  
-//			  double aq = 0.5 + 0.5*(tfq/maxTfq);
-//			  double ad = 0.5 + 0.5*(tfd/maxTfd);
-//			  
-//			  double idf = idf(term, db);
-			  
-			  sum += at(term, query, db) * at(term, document, db);
-		  }
-	  }
-	  return sum;
-  }
-  
 }
 

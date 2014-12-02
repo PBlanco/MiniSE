@@ -110,9 +110,7 @@ public class EvaluateQueries {
 	
 	
 	/* ================= Calculations =================*/
-	private static double evaluate(String indexDir, String docsDir,
-			String queryFile, String answerFile, int numResults,
-			CharArraySet stopwords) {
+	private static double evaluate(String indexDir, String docsDir, String queryFile, String answerFile, int numResults, CharArraySet stopwords) {
 
 		// Build Index
 		MangoDB docIndex = new MangoDB();
@@ -126,7 +124,11 @@ public class EvaluateQueries {
 		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
 			
 
+		//computeRocchio(queries, documents, answers,|rel|, a, b, K)
+		//(A) 
 		Roccio.computeRocchio(queryIndex, docIndex, queryAnswers, 7, 4, 8, 5);
+		//(B) Roccio.computeRocchio(queryIndex, docIndex, queryAnswers, 7, 4, 16, 10);
+		
 		//WeightedIndex x =  TFIDF.computeatcWeights(docIndex);
 		//return atcatc(queryIndex, docIndex, queryAnswers, numResults, x);
 		return 0;

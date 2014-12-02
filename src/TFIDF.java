@@ -279,6 +279,7 @@ class Roccio {
 		
 		double totalMAP = 0;
 		double totalRoccioMAP = 0;
+		double numImprovedQueries = 0;
 		for(String queryName : queryATCIndex.keySet()){
 			HashMap<String, Double> query = queryATCIndex.get(queryName);
 			
@@ -353,8 +354,11 @@ class Roccio {
 			System.out.println("Query "+queryName.toString()+": "+ EvaluateQueries.printDocs(roccioQueryResults, 100));
 			System.out.printf("Roccio MAP for query "+queryName.toString() + " is: %1$.2f\n", map);
 			
-			totalRoccioMAP += EvaluateQueries.meanAverageprecision(queryAnswers.get(answersKey), roccioQueryResults);
+			double rMAP = EvaluateQueries.meanAverageprecision(queryAnswers.get(answersKey), roccioQueryResults);
+			totalRoccioMAP += rMAP;
 			
+			if(rMAP >= map)
+				numImprovedQueries++;
 		}
 		
 		double map = totalMAP/queryIndex.documents().length;
@@ -362,6 +366,7 @@ class Roccio {
 		
 		double roccioMAP = totalRoccioMAP/queryIndex.documents().length;
 		System.out.println("MAP for Rocchio is : " +  String.valueOf(roccioMAP));
+		System.out.println("Number of improved queries: "+ String.valueOf(numImprovedQueries));
 		
 		//create set of all words
 		

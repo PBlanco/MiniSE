@@ -178,7 +178,7 @@ public class TFIDF {
 		  double idf = smartIDF(term, db, invertedIndex);
 		  double qATN;
 		  if (query.get(term) == null) {
-			  qATN = 0.5 * idf;
+			  qATN = 0.0 * idf;
 			  queryWeights.add(qATN);
 		  }
 		  else {
@@ -189,7 +189,7 @@ public class TFIDF {
 		  
 		  //if not in document set to 5
 		  if (document.get(term) == null){	
-			  documentWeights.add((0.5 * idf));
+			  documentWeights.add((0.0 * idf));
 		  } else {
 			  double dtf = augmentedTF(term, document);
 			  double dATN = dtf * idf;

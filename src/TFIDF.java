@@ -1,7 +1,9 @@
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class TFIDF {
@@ -179,7 +181,7 @@ public class TFIDF {
   
   public static HashMap<String, Integer> invertIndex(MangoDB index){
 	//Create inverted index
-	  System.out.println("Creating inverted index");
+//	  System.out.println("Creating inverted index");
 	  HashMap<String, Integer> invertedIndex = new HashMap<String, Integer>();
 	  for(Object docName : index.documents()){
 		  HashMap<String, Integer>document = index.get(String.valueOf(docName));
@@ -195,10 +197,10 @@ public class TFIDF {
   }
   public static WeightedIndex computeatcWeights(MangoDB docIndex){
 	//Create inverted index
-	  System.out.println("Creating inverted index");
+//	  System.out.println("Creating inverted index");
 	  HashMap<String, Integer> invertedIndex = invertIndex(docIndex);
 	  
-	  System.out.println("Computing weights");
+//	  System.out.println("Computing weights");
 	  //created weighted hashmap with double value
 	  WeightedIndex atcDocIndex = new WeightedIndex();
 
@@ -219,7 +221,7 @@ public class TFIDF {
 		  ;
 		  atcDocIndex.put((String)docname, normalize(weightedDocument));
 	  }
-	  System.out.println("Done computing weights");
+//	  System.out.println("Done computing weights");
 
 	  return atcDocIndex;
   }
@@ -244,7 +246,7 @@ public class TFIDF {
 		  //add weight to the atc query index
 		  atcQueryIndex.put((String)name, normalize(weightedQuery));
 	  }
-	  System.out.println("Done computing weights");
+//	  System.out.println("Done computing weights");
 
 	  return atcQueryIndex;  
   }
@@ -252,3 +254,96 @@ public class TFIDF {
 }
 
 class WeightedIndex extends HashMap<String, HashMap<String, Double>>{}
+
+class Roccio {
+
+	//Creates list of documents sorted by atc.atc scores between a query, and all documents
+	public static ArrayList<ReturnDoc> computeDocumentRanks(HashMap<String, Double> queryWM, WeightedIndex documentsWIndex){
+		
+		ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
+		for (String docname : documentsWIndex.keySet()){
+			HashMap<String, Double> dWeights = documentsWIndex.get(docname);
+			double score = DotProduct.dotProduct(queryWM, dWeights);	
+			ReturnDoc doc = new ReturnDoc(docname.substring(0, docname.length() - 4), score);
+			queryResults.add(doc);
+		}
+		
+		Collections.sort(queryResults, new CustomComparator());
+		return queryResults;
+	}
+	
+	
+	public static void computeRocchio(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numRelevantDocs, int a, int b, int k){
+		WeightedIndex queryATCIndex = TFIDF.computeQueryAtcWeights(queryIndex, docIndex);
+		WeightedIndex docATCIndex = TFIDF.computeatcWeights(docIndex);
+		
+		double totalMAP = 0;
+		for(String query : queryATCIndex.keySet()){
+			//Get query key for answers
+			Integer answersKey = Integer.parseInt(query.toString());
+			//calculate MAP
+			ArrayList<ReturnDoc> queryResults = computeDocumentRanks(queryATCIndex.get(query), docATCIndex);
+			double map = EvaluateQueries.meanAverageprecision(queryAnswers.get(answersKey), queryResults);
+//			System.out.println("Query "+query.toString()+": "+ EvaluateQueries.printDocs(queryResults, 7));
+//			System.out.printf("atc.atc MAP for query "+query.toString() + " is: %1$.2f\n", map);
+			totalMAP += map;
+			
+			//Create weighted index for top x docs & vocabulary using top x documents
+			WeightedIndex topDocsIndex = new WeightedIndex();
+			Set<String> vocabulary = new HashSet<String>();
+			
+			vocabulary.addAll(queryATCIndex.get(query).keySet());//add query to vocabulary
+			
+			int i = 0;
+			for(ReturnDoc doc : queryResults){
+				String docname = doc.getName() + ".txt";
+				topDocsIndex.put(docname, docATCIndex.get(docname));
+				vocabulary.addAll(docATCIndex.get(docname).keySet()); // create vocabulary
+		
+				i++;
+				if (i == numRelevantDocs) //break if you've reached the set document amount
+					break;
+			}
+			
+			//compute the roccio terms 
+			HashMap<String, Double> roccioTermWs = new HashMap<String, Double>();
+			for(String term : vocabulary){
+				HashMap<String, Double> q = queryATCIndex.get(query);				
+				double qatc = q.containsKey(term) ? q.get(term) : 0;
+				double sumRel = 0;
+				for(String name : topDocsIndex.keySet()){
+					HashMap<String, Double> document = topDocsIndex.get(name);
+					sumRel += document.containsKey(term) ? document.get(term) : 0;
+				}
+				roccioTermWs.put(term, a*qatc + (b/numRelevantDocs)*sumRel);
+			}
+			
+			
+			//Convert Hashmap to Arraylist to sort
+			
+			
+			
+			//Choose K highest weighted terms and construct new query with roccio weight and terms
+			
+			//Compute inner-product similarity of final Rocchio-weighted query with each weighted document in the collection
+			//, and return the top documents
+			
+
+			
+			
+			
+			
+		}
+		
+		double map = totalMAP/queryIndex.documents().length;
+		System.out.println("MAP before Roccio is : " +  String.valueOf(map));
+		
+		//create set of all words
+		
+		
+		
+		
+		
+	}
+	
+}

@@ -40,14 +40,14 @@ public class EvaluateQueries {
 		
 		double cacmMAP = evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile,
 				cacmAnswerFile, cacmNumResults, stopwords);
-		System.out.println("CACM MAP: " + String.valueOf(cacmMAP));
+//		System.out.println("CACM MAP: " + String.valueOf(cacmMAP));
 
 		System.out.println("\n");
 		
 		double medMAP = evaluate(medIndexDir, medDocsDir, medQueryFile,
 				medAnswerFile, medNumResults, stopwords);
-		System.out.println("MED MAP: "+ String.valueOf(medMAP)+"\n");;
-		System.out.println("CACM MAP: " + String.valueOf(cacmMAP));
+//		System.out.println("MED MAP: "+ String.valueOf(medMAP)+"\n");;
+//		System.out.println("CACM MAP: " + String.valueOf(cacmMAP));
 	}
 
 	/*================== Load Methods ==================*/
@@ -125,12 +125,12 @@ public class EvaluateQueries {
 		MangoDB queryIndex = new MangoDB();
 		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
 			
-		WeightedIndex x =  TFIDF.computeatcWeights(docIndex);
+		Roccio.computeRocchio(queryIndex, docIndex, queryAnswers, 7, 4, 8, 5);
 		//return atcatc(queryIndex, docIndex, queryAnswers, numResults);
 		return 0;
 	}
 	
-	private static double meanAverageprecision(HashSet<String> answers, ArrayList<ReturnDoc> results) {
+	public static double meanAverageprecision(HashSet<String> answers, ArrayList<ReturnDoc> results) {
 		double avp = 0;
 		double matches = 0;
 		double docs = 0;
@@ -186,12 +186,12 @@ public class EvaluateQueries {
 			Collections.sort(queryResults, new CustomComparator());	
 			
 			// For Clustering
-			ArrayList<ReturnDoc> top30 = new ArrayList<ReturnDoc>();
-			for (int i = 0; i < 30; i++)
-				top30.add(queryResults.get(i));
-			ArrayList<ReturnDoc> clequalizedTop30 = CompleteClustering.clequalizeDocs(top30, 20);
-			for (int i = 0; i < 30; i++)
-				queryResults.set(i, clequalizedTop30.get(i));
+//			ArrayList<ReturnDoc> top30 = new ArrayList<ReturnDoc>();
+//			for (int i = 0; i < 30; i++)
+//				top30.add(queryResults.get(i));
+//			ArrayList<ReturnDoc> clequalizedTop30 = CompleteClustering.clequalizeDocs(top30, 20);
+//			for (int i = 0; i < 30; i++)
+//				queryResults.set(i, clequalizedTop30.get(i));
 			
 			//Get query key for answers
 			Integer answersKey = Integer.parseInt(key.toString());
@@ -205,7 +205,7 @@ public class EvaluateQueries {
 	}
 
 	/* =================== Helpers =================== */
-	private static String printDocs(ArrayList<ReturnDoc> docList, int number){
+	public static String printDocs(ArrayList<ReturnDoc> docList, int number){
 		int i = 0;
 		String ret = "[";
 		for (ReturnDoc doc : docList){

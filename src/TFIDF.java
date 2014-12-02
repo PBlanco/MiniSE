@@ -278,11 +278,14 @@ class Roccio {
 		WeightedIndex docATCIndex = TFIDF.computeatcWeights(docIndex);
 		
 		double totalMAP = 0;
-		for(String query : queryATCIndex.keySet()){
+		double totalRoccioMAP = 0;
+		for(String queryName : queryATCIndex.keySet()){
+			HashMap<String, Double> query = queryATCIndex.get(queryName);
+			
 			//Get query key for answers
-			Integer answersKey = Integer.parseInt(query.toString());
+			Integer answersKey = Integer.parseInt(queryName.toString());
 			//calculate MAP
-			ArrayList<ReturnDoc> queryResults = computeDocumentRanks(queryATCIndex.get(query), docATCIndex);
+			ArrayList<ReturnDoc> queryResults = computeDocumentRanks(query, docATCIndex);
 			double map = EvaluateQueries.meanAverageprecision(queryAnswers.get(answersKey), queryResults);
 //			System.out.println("Query "+query.toString()+": "+ EvaluateQueries.printDocs(queryResults, 7));
 //			System.out.printf("atc.atc MAP for query "+query.toString() + " is: %1$.2f\n", map);
@@ -292,7 +295,7 @@ class Roccio {
 			WeightedIndex topDocsIndex = new WeightedIndex();
 			Set<String> vocabulary = new HashSet<String>();
 			
-			vocabulary.addAll(queryATCIndex.get(query).keySet());//add query to vocabulary
+			vocabulary.addAll(query.keySet());//add query to vocabulary
 			
 			int i = 0;
 			for(ReturnDoc doc : queryResults){
@@ -308,8 +311,7 @@ class Roccio {
 			//compute the roccio terms 
 			HashMap<String, Double> roccioTermWs = new HashMap<String, Double>();
 			for(String term : vocabulary){
-				HashMap<String, Double> q = queryATCIndex.get(query);				
-				double qatc = q.containsKey(term) ? q.get(term) : 0;
+				double qatc = query.containsKey(term) ? query.get(term) : 0;
 				double sumRel = 0;
 				for(String name : topDocsIndex.keySet()){
 					HashMap<String, Double> document = topDocsIndex.get(name);
@@ -320,23 +322,46 @@ class Roccio {
 			
 			
 			//Convert Hashmap to Arraylist to sort
+			ArrayList<ReturnDoc> termScoreList = new ArrayList<ReturnDoc>();
+			for(String term : roccioTermWs.keySet()){
+				termScoreList.add(new ReturnDoc(term, roccioTermWs.get(term)));
+			}
+			//sort list
+			Collections.sort(termScoreList, new CustomComparator());
 			
+			//update query weights
+			HashMap<String, Double> roccioWeightedQuery = new HashMap<String, Double>();
+			for(String term : query.keySet()){
+				roccioWeightedQuery.put(term, roccioTermWs.get(term));
+			}
 			
-			
-			//Choose K highest weighted terms and construct new query with roccio weight and terms
+			//Choose K highest weighted terms (not in query) to add to query
+			int numTerms = k;
+			for (ReturnDoc termObj : termScoreList){
+				if(numTerms == 0) //break since we've added all the terms we need to the query
+					break;			
+				if(!roccioWeightedQuery.containsKey(termObj.getName())){
+					roccioWeightedQuery.put(termObj.getName(), termObj.getScore());
+					numTerms--;
+				}
+			}
 			
 			//Compute inner-product similarity of final Rocchio-weighted query with each weighted document in the collection
 			//, and return the top documents
 			
-
+			ArrayList<ReturnDoc> roccioQueryResults = computeDocumentRanks(roccioWeightedQuery, docATCIndex);
+			System.out.println("Query "+queryName.toString()+": "+ EvaluateQueries.printDocs(roccioQueryResults, 100));
+			System.out.printf("Roccio MAP for query "+queryName.toString() + " is: %1$.2f\n", map);
 			
-			
-			
+			totalRoccioMAP += EvaluateQueries.meanAverageprecision(queryAnswers.get(answersKey), roccioQueryResults);
 			
 		}
 		
 		double map = totalMAP/queryIndex.documents().length;
-		System.out.println("MAP before Roccio is : " +  String.valueOf(map));
+		System.out.println("MAP for atc.atc is : " +  String.valueOf(map));
+		
+		double roccioMAP = totalRoccioMAP/queryIndex.documents().length;
+		System.out.println("MAP for Rocchio is : " +  String.valueOf(roccioMAP));
 		
 		//create set of all words
 		

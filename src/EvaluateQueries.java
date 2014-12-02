@@ -12,6 +12,7 @@ import java.util.Map;
 
 
 
+
 // import lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 
@@ -129,7 +130,7 @@ public class EvaluateQueries {
 		MangoDB queryIndex = new MangoDB();
 		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
 			
-		TFIDF.computeAtcatcWeights(docIndex);
+		WeightedIndex x =  TFIDF.computeatcWeights(docIndex);
 		//return atcatc(queryIndex, docIndex, queryAnswers, numResults);
 		return 0;
 	}

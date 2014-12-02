@@ -125,8 +125,10 @@ public class EvaluateQueries {
 		MangoDB queryIndex = new MangoDB();
 		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
 			
+
 		Roccio.computeRocchio(queryIndex, docIndex, queryAnswers, 7, 4, 8, 5);
-		//return atcatc(queryIndex, docIndex, queryAnswers, numResults);
+		//WeightedIndex x =  TFIDF.computeatcWeights(docIndex);
+		//return atcatc(queryIndex, docIndex, queryAnswers, numResults, x);
 		return 0;
 	}
 	
@@ -147,7 +149,7 @@ public class EvaluateQueries {
 		return avp/answers.size();
 	}
 
-	private static double atcatc(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+	private static double atcatc(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults, WeightedIndex docWeights){
 		//Create inverted index
 		System.out.print("Creating inverted index");
 		HashMap<String, Integer> invertedIndex = new HashMap<String, Integer>();
@@ -166,6 +168,7 @@ public class EvaluateQueries {
 		System.out.print("Done!!\n");
 		
 		double totalMAP = 0;
+		
 		for(Object key : queryIndex.documents()){
 			//get query 
 			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
@@ -177,28 +180,28 @@ public class EvaluateQueries {
 			for(Object docName : docIndex.documents()){		
 				Double atcatcScore = TFIDF.computeatcatc(query, docName.toString(), docIndex, invertedIndex);
 				String fullDocName = docName.toString();
-				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), atcatcScore);
+				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), atcatcScore, docWeights.get(fullDocName));
 				queryResults.add(doc);
 			}
-			
 			
 			//sort list of docs by score greatest first
 			Collections.sort(queryResults, new CustomComparator());	
 			
 			// For Clustering
-//			ArrayList<ReturnDoc> top30 = new ArrayList<ReturnDoc>();
-//			for (int i = 0; i < 30; i++)
-//				top30.add(queryResults.get(i));
-//			ArrayList<ReturnDoc> clequalizedTop30 = CompleteClustering.clequalizeDocs(top30, 20);
-//			for (int i = 0; i < 30; i++)
-//				queryResults.set(i, clequalizedTop30.get(i));
+			ArrayList<ReturnDoc> top30 = new ArrayList<ReturnDoc>();
+			for (int i = 0; i < 30; i++)
+				top30.add(queryResults.get(i));
+			ArrayList<ReturnDoc> clequalizedTop30 = CompleteClustering.clequalizeDocs(top30, 10);
+			for (int i = 0; i < 30; i++)
+				queryResults.set(i, clequalizedTop30.get(i));
+
 			
 			//Get query key for answers
 			Integer answersKey = Integer.parseInt(key.toString());
 			//calculate MAP
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
 			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("atc.atc MAP for query "+key.toString() + " is: %1$.2f\n", map);
+			System.out.printf("20-Clustered atc.atc MAP for query "+key.toString() + " is: %1$.2f\n", map);
 			totalMAP += map;
 		}
 		return totalMAP/queryIndex.documents().length;
@@ -233,11 +236,18 @@ class CustomComparator implements Comparator<ReturnDoc> {
 //Doc returned from BM25
 class ReturnDoc{
     private String name;
-    private double score;	
+    private double score;
+    private HashMap<String, Double> atc;
         
     public ReturnDoc(String n, Double bm25Score){
         this.name = n;
         this.score = bm25Score;
+        atc = new HashMap<String, Double>();
+    }
+    public ReturnDoc(String n, Double score, HashMap<String, Double> weights) {
+    	name = n;
+    	this.score = score;
+    	atc = weights;
     }
      
     public String getName() {
@@ -250,6 +260,10 @@ class ReturnDoc{
     
     public void setScore(double newScore) {
     	this.score = newScore;
+    }
+    
+    public HashMap<String, Double> weights() {
+    	return atc;
     }
 }
 
@@ -264,6 +278,9 @@ class DotProduct {
 		for (String key : commonKeyset)
 			sum += (v1.get(key) * v2.get(key));
 		return sum;
+	}
+	public static double dotProduct(ReturnDoc d1, ReturnDoc d2) {
+		return dotProduct(d1.weights(), d2.weights());
 	}
 }
 
@@ -328,6 +345,14 @@ class Cluster {
 	public ArrayList<ReturnDoc> docs() {
 		return docs;
 	}
+	
+	public int size() {
+		return docs.size();
+	}
+	
+	public ReturnDoc get(int index) {
+		return docs.get(index);
+	}
 }
 
 class ClusterDistanceComparator implements Comparator<ClusterDistance> {
@@ -343,7 +368,11 @@ class ClusterDistanceComparator implements Comparator<ClusterDistance> {
 
 class CompleteClustering {
 	private static double distance(Cluster c1, Cluster c2) {
-		return 1.0;
+		ArrayList<Double> dotProducts = new ArrayList<Double>(c1.size() * c2.size());
+		for (ReturnDoc d1 : c1.docs())
+			for (ReturnDoc d2 : c2.docs())
+				dotProducts.add(DotProduct.dotProduct(d1, d2));
+		return Collections.max(dotProducts);
 	}
 	private static ArrayList<Cluster> cluster(ArrayList<Cluster> clusters, int k) {
 		if (clusters.size() == k)

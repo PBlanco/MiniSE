@@ -59,7 +59,6 @@ public class TFIDF {
     double maxTF = (double)maxTF(doc);
     return 0.5 + 0.5 * (tf / maxTF);
   }
-  
 
   public static double idf(String term, MangoDB database) {
     double N = (double)database.documentCount();
@@ -75,7 +74,6 @@ public class TFIDF {
     return tf * idf;
   }
 
-  
   public static double smartIDF(String term, MangoDB database, HashMap<String,Integer> invertedIndex) {
 	    double n = invertedIndex.containsKey(term) ? invertedIndex.get(term).doubleValue() : 0;
 	    if (n == 0)

@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import java.util.Set;
+
 // import lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 
@@ -248,6 +250,20 @@ class ReturnDoc{
     public void setScore(double newScore) {
     	this.score = newScore;
     }
+}
+
+class DotProduct {
+	public static double dotProduct(HashMap<String, Double> v1, HashMap<String, Double> v2) {
+		Set<String> keyset1 = v1.keySet();
+		Set<String> keyset2 = v2.keySet();
+		Set<String> commonKeyset = new HashSet<String>();
+		commonKeyset.addAll(keyset1);
+		commonKeyset.retainAll(keyset2);
+		double sum = 0.0;
+		for (String key : commonKeyset)
+			sum += (v1.get(key) * v2.get(key));
+		return sum;
+	}
 }
 
 class ClusterDistance {

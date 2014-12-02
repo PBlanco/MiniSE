@@ -183,18 +183,32 @@ public class TFIDF {
 	  
 	  ArrayList<Double> queryWeights = new ArrayList<Double>();
 	  ArrayList<Double> documentWeights = new ArrayList<Double>();
-	  for (String term : query.keySet()){
+	  
+	  HashMap<String, Integer> allTerms = new HashMap<String, Integer>(query);
+	  allTerms.putAll(document);
+	  
+	  for (String term : allTerms.keySet()) {
 		  //calculate query tf*idf
-		  double qtf = augmentedTF(term, query);
 		  double idf = smartIDF(term, db, invertedIndex);
-		  queryWeights.add(qtf*idf);
+		  double qATN;
+		  if (query.get(term) == null) {
+			  qATN = 0.0 * idf;
+			  queryWeights.add(qATN);
+		  }
+		  else {
+			  double qtf = augmentedTF(term, query);
+			  qATN = qtf * idf;
+			  queryWeights.add(qATN);
+		  }
 		  
-		  //if term not in document set to .5 because of augmented tf system
+		  //if not in document set to 5
 		  if (document.get(term) == null){	
-			  documentWeights.add((0 * idf));
+			  documentWeights.add((0.0 * idf));
 		  } else {
 			  double dtf = augmentedTF(term, document);
-			  documentWeights.add(dtf*idf);	  
+			  double dATN = dtf * idf;
+			  documentWeights.add(dATN);
+//			  sum += qATN * dATN;
 		  }
 	  }
 	  

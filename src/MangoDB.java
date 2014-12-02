@@ -16,6 +16,10 @@ public class MangoDB {
 		mango = new HashMap<String, HashMap<String, Integer>>();
 	}
 	
+	public MangoDB(MangoDB db) {
+		mango = new HashMap<String, HashMap<String, Integer>>(db.mango);
+	}
+	
 	public Integer frequencyForToken(String token) {
 		int freq = 0;
 		Set<String> documents = mango.keySet();

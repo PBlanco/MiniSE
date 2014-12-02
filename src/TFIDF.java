@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-
 public class TFIDF {
   public static String[] pieces(String original) {
     return original.split("\\s+");
@@ -135,8 +134,6 @@ public class TFIDF {
 	  return annMap;
   }
   
-  
-  
   public static double smartIDF(String term, MangoDB database, HashMap<String,Integer> invertedIndex) {
 	    double N = (double)database.documentCount();
 	    double n = invertedIndex.containsKey(term) ? invertedIndex.get(term).doubleValue() : 0;
@@ -157,7 +154,6 @@ public class TFIDF {
 	   */
 	  
 	  HashMap<String, Integer> document = db.tokenFrequenciesForDocument(docName);
-	  
 	  double sum = 0.0;
 	    
 	  /*
@@ -174,7 +170,6 @@ public class TFIDF {
 	  allTerms.putAll(document);
 	  
 	  for (String term : allTerms.keySet()) {
-		  //calculate query tf*idf
 		  double idf = smartIDF(term, db, invertedIndex);
 		  double qATN;
 		  if (query.get(term) == null) {
@@ -186,24 +181,17 @@ public class TFIDF {
 			  qATN = qtf * idf;
 			  queryWeights.add(qATN);
 		  }
-		  
-		  //if not in document set to 5
 		  if (document.get(term) == null){	
 			  documentWeights.add((0.0 * idf));
 		  } else {
 			  double dtf = augmentedTF(term, document);
 			  double dATN = dtf * idf;
 			  documentWeights.add(dATN);
-//			  sum += qATN * dATN;
 		  }
 	  }
-	  
-	  
-	  
-////	  System.out.println("Queryweights size: " + queryWeights.size());
+
 	  double[] normalizedQueryWeights = normalizeWeights(queryWeights);
 	  double[] normalizedDocumentWeights = normalizeWeights(documentWeights);
-////	  System.out.println("Normalized size: " + normalizedQueryWeights.length);
 	  for (int i = 0; i < normalizedQueryWeights.length; i++)
 		  sum += (normalizedQueryWeights[i] * normalizedDocumentWeights[i]);
 	  
@@ -249,14 +237,6 @@ public class TFIDF {
 
 	  for (String term : query.keySet()){
 		  if (document.get(term) != null){
-//			  double tfq = query.get(term);
-//			  double tfd = document.get(term);
-//			  
-//			  double aq = 0.5 + 0.5*(tfq/maxTfq);
-//			  double ad = 0.5 + 0.5*(tfd/maxTfd);
-//			  
-//			  double idf = idf(term, db);
-			  
 			  sum += at(term, query, db) * at(term, document, db);
 		  }
 	  }

@@ -10,14 +10,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-
-
 // import lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.util.CharArraySet;
 
 public class EvaluateQueries {
-	
-	
 	
 	public static void main(String[] args) {
 		String cacmDocsDir = "data/cacm/"; // directory containing CACM documents
@@ -35,7 +31,6 @@ public class EvaluateQueries {
 		int cacmNumResults = 100;
 		int medNumResults = 100;
 
-		
 		//tokenizer 
 		String stopwordFile = "stopwords/stopwords_indri.txt"; //Stop word file
 		CharArraySet stopwords = IndexFiles.makeStopwordSet(stopwordFile);
@@ -44,14 +39,12 @@ public class EvaluateQueries {
 				cacmAnswerFile, cacmNumResults, stopwords);
 		System.out.println("CACM MAP: " + String.valueOf(cacmMAP));
 
-		
 		System.out.println("\n");
 		
 		double medMAP = evaluate(medIndexDir, medDocsDir, medQueryFile,
 				medAnswerFile, medNumResults, stopwords);
 		System.out.println("MED MAP: "+ String.valueOf(medMAP)+"\n");;
 		System.out.println("CACM MAP: " + String.valueOf(cacmMAP));
-		
 	}
 
 	private static Map<Integer, String> loadQueries(String filename) {
@@ -142,10 +135,6 @@ public class EvaluateQueries {
 	
 	private static double atnatn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
 		double totalMAP = 0;
-	
-		
-		
-		
 		//loop through queries
 		for(Object key : queryIndex.documents()){
 			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
@@ -175,7 +164,6 @@ public class EvaluateQueries {
 	}
 	
 	private static double atcatc(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
-		
 		//Create inverted index
 		System.out.print("Creating inverted index");
 		HashMap<String, Integer> invertedIndex = new HashMap<String, Integer>();

@@ -126,8 +126,7 @@ public class EvaluateQueries {
 		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
 			
 		WeightedIndex x =  TFIDF.computeatcWeights(docIndex);
-		//return atcatc(queryIndex, docIndex, queryAnswers, numResults);
-		return 0;
+		return atcatc(queryIndex, docIndex, queryAnswers, numResults, x);
 	}
 	
 	private static double meanAverageprecision(HashSet<String> answers, ArrayList<ReturnDoc> results) {
@@ -147,7 +146,7 @@ public class EvaluateQueries {
 		return avp/answers.size();
 	}
 
-	private static double atcatc(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
+	private static double atcatc(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults, WeightedIndex docWeights){
 		//Create inverted index
 		System.out.print("Creating inverted index");
 		HashMap<String, Integer> invertedIndex = new HashMap<String, Integer>();
@@ -166,6 +165,7 @@ public class EvaluateQueries {
 		System.out.print("Done!!\n");
 		
 		double totalMAP = 0;
+		
 		for(Object key : queryIndex.documents()){
 			//get query 
 			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
@@ -177,10 +177,9 @@ public class EvaluateQueries {
 			for(Object docName : docIndex.documents()){		
 				Double atcatcScore = TFIDF.computeatcatc(query, docName.toString(), docIndex, invertedIndex);
 				String fullDocName = docName.toString();
-				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), atcatcScore);
+				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), atcatcScore, docWeights.get(fullDocName));
 				queryResults.add(doc);
 			}
-			
 			
 			//sort list of docs by score greatest first
 			Collections.sort(queryResults, new CustomComparator());	
@@ -189,7 +188,7 @@ public class EvaluateQueries {
 			ArrayList<ReturnDoc> top30 = new ArrayList<ReturnDoc>();
 			for (int i = 0; i < 30; i++)
 				top30.add(queryResults.get(i));
-			ArrayList<ReturnDoc> clequalizedTop30 = CompleteClustering.clequalizeDocs(top30, 20);
+			ArrayList<ReturnDoc> clequalizedTop30 = CompleteClustering.clequalizeDocs(top30, 10);
 			for (int i = 0; i < 30; i++)
 				queryResults.set(i, clequalizedTop30.get(i));
 			
@@ -198,7 +197,7 @@ public class EvaluateQueries {
 			//calculate MAP
 			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
 			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("atc.atc MAP for query "+key.toString() + " is: %1$.2f\n", map);
+			System.out.printf("20-Clustered atc.atc MAP for query "+key.toString() + " is: %1$.2f\n", map);
 			totalMAP += map;
 		}
 		return totalMAP/queryIndex.documents().length;
@@ -365,7 +364,7 @@ class ClusterDistanceComparator implements Comparator<ClusterDistance> {
 
 class CompleteClustering {
 	private static double distance(Cluster c1, Cluster c2) {
-		ArrayList<Double> dotProducts = new ArrayList<Double>();
+		ArrayList<Double> dotProducts = new ArrayList<Double>(c1.size() * c2.size());
 		for (ReturnDoc d1 : c1.docs())
 			for (ReturnDoc d2 : c2.docs())
 				dotProducts.add(DotProduct.dotProduct(d1, d2));

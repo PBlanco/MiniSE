@@ -250,5 +250,3 @@ public class TFIDF {
   }
   
 }
-
-class WeightedIndex extends HashMap<String, HashMap<String, Double>>{}

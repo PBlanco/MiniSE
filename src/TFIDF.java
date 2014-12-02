@@ -191,7 +191,7 @@ public class TFIDF {
 		  
 		  //if term not in document set to .5 because of augmented tf system
 		  if (document.get(term) == null){	
-			  documentWeights.add((0.5 * idf));
+			  documentWeights.add((0 * idf));
 		  } else {
 			  double dtf = augmentedTF(term, document);
 			  documentWeights.add(dtf*idf);	  

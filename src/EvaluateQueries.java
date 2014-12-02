@@ -110,70 +110,8 @@ public class EvaluateQueries {
 		}
 		return queryAnswerMap;
 	}
-	
-	private static double bm25(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
-		double totalMAP = 0;
-		for(Object key : queryIndex.documents()){
-			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
-			//search for query
-			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
 
-			//Create list of documents
-			for(Object docName : docIndex.documents()){
-				//calculate bm25
-				Double bm25Score = BM25Similarity.computeBM25Similarity(query, docName.toString(), docIndex);
-				String fullDocName = docName.toString();
-				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), bm25Score);
-				queryResults.add(doc);
-			}
-			//sort list of docs by score greatest first
-			Collections.sort(queryResults, new CustomComparator());	
 
-			//Get query key for answers
-			Integer answersKey = Integer.parseInt(key.toString());
-			//calculate MAP
-			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
-			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("BM25 MAP for query "+key.toString() + " is: %1$.2f\n", map);
-			totalMAP += map;
-		}
-		return totalMAP/queryIndex.documents().length;
-	}
-	
-	private static double atnatn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
-		double totalMAP = 0;
-	
-		
-		
-		
-		//loop through queries
-		for(Object key : queryIndex.documents()){
-			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
-			
-			//create list to store score results
-			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
-
-			//loop through documents
-			for(Object docName : docIndex.documents()){		
-				Double atnatnScore = TFIDF.computeAtnatn(query, docName.toString(), docIndex);
-				String fullDocName = docName.toString();
-				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), atnatnScore);
-				queryResults.add(doc);
-			}
-			//sort list of docs by score greatest first
-			Collections.sort(queryResults, new CustomComparator());	
-
-			//Get query key for answers
-			Integer answersKey = Integer.parseInt(key.toString());
-			//calculate MAP
-			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
-			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("atn.atn MAP for query "+key.toString() + " is: %1$.2f\n", map);
-			totalMAP += map;
-		}
-		return totalMAP/queryIndex.documents().length;
-	}
-	
 	private static double atcatc(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
 		
 		//Create inverted index
@@ -225,40 +163,7 @@ public class EvaluateQueries {
 		return totalMAP/queryIndex.documents().length;
 	}
 	
-	private static double annbpn(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int numResults){
-		double totalMAP = 0;
-		for(Object key : queryIndex.documents()){
-			
-			HashMap<String, Integer> query = queryIndex.tokenFrequenciesForDocument(key.toString());
-			//search for query
-			ArrayList<ReturnDoc> queryResults = new ArrayList<ReturnDoc>();
-			
-			//Create list of documents
-			
-			//compute ann
-			HashMap<String, Double> queryAnnMap = TFIDF.computeAnn(query);
-		
-			
-			for(Object docName : docIndex.documents()){		
-				
-				Double annBpnScore = TFIDF.computeAnnBpn(queryAnnMap, docName.toString(), docIndex);
-				String fullDocName = docName.toString();
-				ReturnDoc doc = new ReturnDoc(fullDocName.substring(0, fullDocName.length() - 4), annBpnScore);
-				queryResults.add(doc);
-			}
-			//sort list of docs by score greatest first
-			Collections.sort(queryResults, new CustomComparator());	
-			
-			//Get query key for answers
-			Integer answersKey = Integer.parseInt(key.toString());
-			//calculate MAP
-			double map = meanAverageprecision(queryAnswers.get(answersKey), queryResults);
-			System.out.println("Query "+key.toString()+": "+ printDocs(queryResults, numResults));
-			System.out.printf("ann.bpn MAP for query "+key.toString() + " is: %1$.2f\n", map);
-			totalMAP += map;
-		}
-		return totalMAP/queryIndex.documents().length;
-	}
+
 	
 	
 	private static double meanAverageprecision(HashSet<String> answers, ArrayList<ReturnDoc> results) {

@@ -288,8 +288,6 @@ class Roccio {
 			//calculate MAP
 			ArrayList<ReturnDoc> queryResults = computeDocumentRanks(query, docATCIndex);
 			double map = EvaluateQueries.meanAverageprecision(queryAnswers.get(answersKey), queryResults);
-//			System.out.println("Query "+query.toString()+": "+ EvaluateQueries.printDocs(queryResults, 7));
-//			System.out.printf("atc.atc MAP for query "+query.toString() + " is: %1$.2f\n", map);
 			totalMAP += map;
 			
 			//Create weighted index for top x docs & vocabulary using top x documents
@@ -352,13 +350,33 @@ class Roccio {
 			
 			ArrayList<ReturnDoc> roccioQueryResults = computeDocumentRanks(roccioWeightedQuery, docATCIndex);
 			System.out.println("Query "+queryName.toString()+": "+ EvaluateQueries.printDocs(roccioQueryResults, 100));
-			System.out.printf("Roccio MAP for query "+queryName.toString() + " is: %1$.2f\n", map);
+			System.out.printf("atc.atc MAP for query "+queryName.toString() + " is: %1$.2f\n", map);
+			
 			
 			double rMAP = EvaluateQueries.meanAverageprecision(queryAnswers.get(answersKey), roccioQueryResults);
 			totalRoccioMAP += rMAP;
 			
-			if(rMAP >= map)
+			System.out.printf("Roccio MAP for query "+queryName.toString() + " is: %1$.2f\n", rMAP);
+			
+			if(rMAP >= map){
 				numImprovedQueries++;
+				System.out.printf(queryName.toString() + " improved\n");
+			} else {
+				System.out.printf(queryName.toString() + " got worse\n");
+			}
+			
+			/*
+			//Part f stuff
+			if(Integer.valueOf(queryName) == 28){
+				System.out.println("Query ATC Weights: ");
+				printWeights(query);
+				
+				System.out.println("Query Rocchio Weights: ");
+				printWeights(roccioWeightedQuery);
+				
+			}
+			*/
+				
 		}
 		
 		double map = totalMAP/queryIndex.documents().length;
@@ -374,6 +392,14 @@ class Roccio {
 		
 		
 		
+	}
+	
+	private static void printWeights(HashMap<String, Double> map){
+		System.out.print('{');
+		for(String term : map.keySet()){
+			System.out.printf(term + ": %.5f, ", map.get(term));
+		}
+		System.out.print("}\n");
 	}
 	
 }

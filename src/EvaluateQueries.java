@@ -124,9 +124,9 @@ public class EvaluateQueries {
 		IndexFiles.buildQueryIndex(queries, stopwords, queryIndex);
 			
 
-		//computeRocchio(queries, documents, answers,|rel|, a, b, K)
+		//computeRocchio(queries, documents, answers,|rel|, a, b,c, K)
 		//(A) 
-		Roccio.computeRocchio(queryIndex, docIndex, queryAnswers, 7, 4, 8, 5);
+		Roccio.computeRocchio(queryIndex, docIndex, queryAnswers, 7, 4, 8, 1, 5);
 		//(B) Roccio.computeRocchio(queryIndex, docIndex, queryAnswers, 7, 4, 16, 10);
 		
 		//WeightedIndex x =  TFIDF.computeatcWeights(docIndex);

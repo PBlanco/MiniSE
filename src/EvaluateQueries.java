@@ -37,13 +37,13 @@ public class EvaluateQueries {
 		//tokenizer 
 		String stopwordFile = "stopwords/stopwords_indri.txt"; //Stop word file
 		CharArraySet stopwords = IndexFiles.makeStopwordSet(stopwordFile);
-		
+		/*
 		double cacmMAP = evaluate(cacmIndexDir, cacmDocsDir, cacmQueryFile,
 				cacmAnswerFile, cacmNumResults, stopwords);
 //		System.out.println("CACM MAP: " + String.valueOf(cacmMAP));
 
 		System.out.println("\n");
-		
+		*/
 		double medMAP = evaluate(medIndexDir, medDocsDir, medQueryFile,
 				medAnswerFile, medNumResults, stopwords);
 //		System.out.println("MED MAP: "+ String.valueOf(medMAP)+"\n");;
@@ -126,7 +126,7 @@ public class EvaluateQueries {
 
 		//computeRocchio(queries, documents, answers,|rel|, a, b,c, K)
 		//(A) 
-		Roccio.computeRocchio(queryIndex, docIndex, queryAnswers, 7, 4, 8, 1, 5);
+		Roccio.computeRocchio(queryIndex, docIndex, queryAnswers, 7, 4, 8, 10, 10);
 		//(B) Roccio.computeRocchio(queryIndex, docIndex, queryAnswers, 7, 4, 16, 10);
 		
 		//WeightedIndex x =  TFIDF.computeatcWeights(docIndex);

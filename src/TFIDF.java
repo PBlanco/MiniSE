@@ -326,7 +326,7 @@ class Roccio {
 				double rWeight =  a*qatc + (b/numRelevantDocs)*sumRel - (1/numNonRelDocs)*sumNonRel;
 				
 				if (rWeight > 0)
-					roccioTermWs.put(term, a*qatc + (b/numRelevantDocs)*sumRel);
+					roccioTermWs.put(term, rWeight);
 			}
 			
 			
@@ -397,6 +397,155 @@ class Roccio {
 		System.out.println("Number of improved queries: "+ String.valueOf(numImprovedQueries));
 	}
 	
+	public static void computeRocchio3(MangoDB queryIndex, MangoDB docIndex, Map<Integer, HashSet<String>>queryAnswers, int a, int b, int c, int k){
+		System.out.println("Part 3: Rocchio Relevance Feedback");
+		WeightedIndex queryATCIndex = TFIDF.computeQueryAtcWeights(queryIndex, docIndex);
+		WeightedIndex docATCIndex = TFIDF.computeatcWeights(docIndex);
+		
+		double totalMAP = 0;
+		double totalRoccioMAP = 0;
+		double numImprovedQueries = 0;
+		for(String queryName : queryATCIndex.keySet()){
+			HashMap<String, Double> query = queryATCIndex.get(queryName);
+			
+			//Get query key for answers
+			Integer answersKey = Integer.parseInt(queryName.toString());
+			//calculate MAP
+			ArrayList<ReturnDoc> queryResults = computeDocumentRanks(query, docATCIndex);
+			HashSet<String> queryRelDocs = queryAnswers.get(answersKey); // get rel docs for query
+			double map = EvaluateQueries.meanAverageprecision(queryRelDocs, queryResults);
+			totalMAP += map;
+			
+			//Create weighted index for top x docs & vocabulary using top x documents
+			WeightedIndex relDocsIndex = new WeightedIndex();
+			WeightedIndex nonRelDocsIndex = new WeightedIndex();
+			
+			Set<String> vocabulary = new HashSet<String>();
+			
+			vocabulary.addAll(query.keySet());//add query to vocabulary
+			
+			int i = 0;
+			ReturnDoc topRelDoc = null;
+			ReturnDoc topNonRelDoc = null;
+			
+			for(ReturnDoc doc : queryResults){
+				String docname = doc.getName() + ".txt";
+				if(queryRelDocs.contains(doc.getName())){
+					if (topRelDoc == null || topRelDoc.getScore() < doc.getScore()){
+						topRelDoc = doc;
+					}
+				} else {
+					if (topNonRelDoc == null || topNonRelDoc.getScore() < doc.getScore()){
+						topNonRelDoc = doc;
+					}
+				}
+
+			}
+			//create vocab
+			if(topRelDoc != null){
+				vocabulary.addAll(docATCIndex.get(topRelDoc.getName()+ ".txt").keySet());
+				relDocsIndex.put(topRelDoc.getName()+ ".txt", docATCIndex.get(topRelDoc.getName()+ ".txt"));
+			}
+			if(topNonRelDoc != null){
+				vocabulary.addAll(docATCIndex.get(topNonRelDoc.getName()+ ".txt").keySet());
+				nonRelDocsIndex.put(topNonRelDoc.getName()+ ".txt", docATCIndex.get(topNonRelDoc.getName()+ ".txt"));
+			}
+			
+
+			//compute the roccio terms 
+			HashMap<String, Double> roccioTermWs = new HashMap<String, Double>();
+			for(String term : vocabulary){
+				double qatc = query.containsKey(term) ? query.get(term) : 0;
+				
+				double sumRel = b!=0 ? sumOfTermInCorpus(relDocsIndex, term) : 0;
+				
+				double sumNonRel = c!=0 ? sumOfTermInCorpus(nonRelDocsIndex, term) : 0;
+				
+				double x = relDocsIndex.size() != 0 ? (b/relDocsIndex.size()) : 0 ;
+				double y = nonRelDocsIndex.size() != 0 ? (b/nonRelDocsIndex.size()) : 0 ;
+				
+				double rWeight =  a*qatc + x*sumRel - y*sumNonRel;
+				
+				if (rWeight > 0){
+					roccioTermWs.put(term, rWeight);
+				} else {
+					roccioTermWs.put(term, (double)0.0);
+				}
+			}
+			
+			
+			//Convert Hashmap to Arraylist to sort
+			ArrayList<ReturnDoc> termScoreList = new ArrayList<ReturnDoc>();
+			for(String term : roccioTermWs.keySet()){
+				termScoreList.add(new ReturnDoc(term, roccioTermWs.get(term)));
+			}
+			//sort list
+			Collections.sort(termScoreList, new CustomComparator());
+			
+			//update query weights
+			HashMap<String, Double> roccioWeightedQuery = new HashMap<String, Double>();
+			for(String term : query.keySet()){
+				roccioWeightedQuery.put(term, roccioTermWs.get(term));
+			}
+			
+			//Choose K highest weighted terms (not in query) to add to query
+			int numTerms = k;
+			for (ReturnDoc termObj : termScoreList){
+				if(numTerms == 0) //break since we've added all the terms we need to the query
+					break;			
+				if(!roccioWeightedQuery.containsKey(termObj.getName())){
+					roccioWeightedQuery.put(termObj.getName(), termObj.getScore());
+					numTerms--;
+				}
+			}
+			
+			//Compute inner-product similarity of final Rocchio-weighted query with each weighted document in the collection
+			//, and return the top documents
+			
+			ArrayList<ReturnDoc> roccioQueryResults = computeDocumentRanks(roccioWeightedQuery, docATCIndex);
+			System.out.println("Query "+queryName.toString()+": "+ EvaluateQueries.printDocs(roccioQueryResults, 100));
+			System.out.printf("atc.atc MAP for query "+queryName.toString() + " is: %1$.2f\n", map);
+			
+			
+			double rMAP = EvaluateQueries.meanAverageprecision(queryAnswers.get(answersKey), roccioQueryResults);
+			totalRoccioMAP += rMAP;
+			
+			System.out.printf("Roccio MAP for query "+queryName.toString() + " is: %1$.2f\n", rMAP);
+			
+			if(rMAP >= map){
+				numImprovedQueries++;
+				System.out.printf(queryName.toString() + " improved\n");
+			} else {
+				System.out.printf(queryName.toString() + " got worse\n");
+			}
+			
+			/*
+			//Part f stuff
+			if(Integer.valueOf(queryName) == 33){
+				System.out.println("Query ATC Weights: ");
+				printWeights(query);
+				
+				System.out.println("Query Rocchio Weights: ");
+				printWeights(roccioWeightedQuery);
+				
+			}
+			*/
+			
+				
+		}
+		
+		double map = totalMAP/queryIndex.documents().length;
+		System.out.println("MAP for atc.atc is : " +  String.valueOf(map));
+		
+		double roccioMAP = totalRoccioMAP/queryIndex.documents().length;
+		System.out.println("MAP for Rocchio is : " +  String.valueOf(roccioMAP));
+		System.out.println("Number of improved queries: "+ String.valueOf(numImprovedQueries));
+	}
+	
+	
+	
+	
+	
 	private static double sumOfTermInCorpus(WeightedIndex index, String term){
 		double sum = 0;
 		for(String name : index.keySet()){
@@ -409,7 +558,7 @@ class Roccio {
 	private static void printWeights(HashMap<String, Double> map){
 		System.out.print('{');
 		for(String term : map.keySet()){
-			System.out.printf(term + ": %.5f, ", map.get(term));
+			System.out.printf(term + ": %.5f\n ", map.get(term));
 		}
 		System.out.print("}\n");
 	}
